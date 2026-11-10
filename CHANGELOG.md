@@ -5,6 +5,28 @@ All notable changes to the Starship Lander project will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] — Build 40 (Phase: Content — "Starship Program")
+
+### Added
+- **Campaign Chapter 2: Starship Program** (levels 11–15, unlocked after Jupiter):
+  - **Starbase** — pad C becomes the launch tower: hover into the chopstick arms, which swing closed on a successful catch ("Caught by the tower!").
+  - **Belly Flop** — spawn horizontal (90°) high above Earth; falling belly-first is slow, so flip upright and burn at the right moment.
+  - **Phobos** — 0.7 gravity, Mars filling the sky, only 45% propellant.
+  - **Ceres** — meteor shower with red warning markers; meteors are lethal and crater the ground.
+  - **Mars Night** — darkness except the ship's landing light, its ground light pool and the pad beacons; light dust wind.
+  - Mission briefings on the pre-flight overlay; chapter headers in Level Select; star totals now out of 45.
+- **Atmospheric flight model** for chapter 2 worlds: quadratic drag scaled by attitude (sideways ≈ 5.5× upright area; Earth belly-flop terminal velocity ≈ 150 pts/s). Chapter 1 worlds keep their original vacuum model.
+- **Reentry plasma** glow on the ship's leading face when falling fast through air.
+- **Ghost replay**: your best landing on each Campaign level and Classic is recorded (20 samples/s) and flown alongside you as a translucent "BEST" ghost (`GhostRun.swift`).
+- **Folding landing legs**: legs start stowed along the hull and swing down below 200 pts altitude with a clunk.
+- **Rendered realistic art** (`Scripts/render_art.py`, assets in `Assets.xcassets`): 3D-lit planets with surface detail and atmospheres (Earth with clouds and ocean glint, Moon and Phobos with lit craters, Mars with polar cap, banded Jupiter with the Great Red Spot, Saturn with rings, cracked Europa, Sun with corona); deep-space starfield with the Milky Way drawn over each sky; regolith/crater ground texture tinted per world; a slender Starship with mirror-steel reflections, weld rings, hex heat-shield tiles, swept flaps and Raptor bells, rendered for all 7 Hangar skins; shock diamonds in the plume; concrete pads with hazard stripes and floodlights; shaded boulders.
+- Game Center setup script lists `campaign_11`–`campaign_15` leaderboards; default leaderboard names for the new levels.
+- Tests: `ChapterTwoTests` (drag model, belly-flop terminal velocity, ghost storage/interpolation); level tests updated for 15 levels.
+
+### Changed
+- Campaign spawn attitude and starting fuel are per level (`initialTilt`, `initialFuel`), defaulting to the existing reentry state.
+- Ship, planets, sky and terrain switched from vector shapes to rendered textures; old shape-drawing code removed (`CelestialBody` now only carries name + radius; skin palettes keep plume/debris colors). Collision geometry unchanged.
+
 ## [2.3.0] — Build 39 (Phase: Engagement — "Mission Control")
 
 ### Added

@@ -25,7 +25,10 @@ struct GameContainerView: View {
                 }
 
                 if !gameState.gameOver && !gameState.flightStarted {
-                    PreflightHintView(useAccelerometer: gameState.useAccelerometer)
+                    PreflightHintView(
+                        useAccelerometer: gameState.useAccelerometer,
+                        briefing: gameState.currentMode == .campaign ? LevelDefinition.level(for: gameState.currentLevelId)?.briefing : nil
+                    )
                         .padding(.top, 4)
                         .transition(.opacity)
                 }
@@ -77,14 +80,31 @@ struct GameContainerView: View {
 }
 
 // MARK: - Pre-flight Hint
-// Shown until the first input. New pilots also get the three landing rules.
+// Shown until the first input. Chapter 2 missions show their briefing;
+// otherwise new pilots get the three landing rules.
 struct PreflightHintView: View {
     let useAccelerometer: Bool
+    var briefing: String? = nil
     @State private var pulse = false
 
     var body: some View {
         VStack(spacing: 8) {
-            if PilotProgress.shared.isRookie {
+            if let briefing = briefing {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("MISSION BRIEFING")
+                        .font(.custom("Orbitron", size: 10).weight(.bold))
+                        .foregroundColor(.cyan)
+                    Text(briefing)
+                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                        .foregroundColor(.white)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(10)
+                .frame(maxWidth: 320, alignment: .leading)
+                .background(Color.black.opacity(0.65))
+                .cornerRadius(10)
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.cyan.opacity(0.4), lineWidth: 1))
+            } else if PilotProgress.shared.isRookie {
                 VStack(alignment: .leading, spacing: 4) {
                     tip("arrow.down.to.line", "Touch down slowly: watch the \u{2193} readout")
                     tip("arrow.up", "Stay upright: tilt under 3\u{00B0} is perfect")
@@ -132,6 +152,12 @@ struct GameSceneView: UIViewRepresentable {
         let view = SKView()
         view.ignoresSiblingOrder = true
         view.allowsTransparency = true
+        #if DEBUG
+        if DebugLaunch.isScripted {
+            view.showsFPS = true
+            view.showsNodeCount = true
+        }
+        #endif
 
         let scene = GameScene(gameState: gameState, campaignState: campaignState)
         scene.scaleMode = .resizeFill

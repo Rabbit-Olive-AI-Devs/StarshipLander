@@ -34,7 +34,7 @@ struct LevelSelectView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "star.fill")
                         .foregroundColor(.yellow)
-                    Text("\(campaignState.totalStars)/30")
+                    Text("\(campaignState.totalStars)/\(LevelDefinition.maxStars)")
                         .font(.custom("Orbitron", size: 14).weight(.bold))
                         .foregroundColor(.yellow)
                 }
@@ -44,18 +44,28 @@ struct LevelSelectView: View {
             // Level Grid
             ScrollView {
                 VStack(spacing: 12) {
-                    LazyVGrid(columns: columns, spacing: 12) {
-                        ForEach(LevelDefinition.levels, id: \.id) { level in
-                            LevelCardView(
-                                level: level,
-                                isUnlocked: campaignState.isUnlocked(level.id),
-                                stars: campaignState.bestStars(for: level.id),
-                                bestScore: campaignState.bestScore(for: level.id)
-                            ) {
-                                gameState.currentMode = .campaign
-                                gameState.currentLevelId = level.id
-                                gameState.reset()
-                                showingGame = true
+                    ForEach(LevelDefinition.chapters, id: \.self) { chapter in
+                        HStack {
+                            Text(LevelDefinition.chapterTitle(chapter))
+                                .font(.custom("Orbitron", size: 11).weight(.bold))
+                                .foregroundColor(chapter == 1 ? .orange : .cyan)
+                            Spacer()
+                        }
+                        .padding(.top, chapter == 1 ? 0 : 8)
+
+                        LazyVGrid(columns: columns, spacing: 12) {
+                            ForEach(LevelDefinition.levels.filter { $0.chapter == chapter }, id: \.id) { level in
+                                LevelCardView(
+                                    level: level,
+                                    isUnlocked: campaignState.isUnlocked(level.id),
+                                    stars: campaignState.bestStars(for: level.id),
+                                    bestScore: campaignState.bestScore(for: level.id)
+                                ) {
+                                    gameState.currentMode = .campaign
+                                    gameState.currentLevelId = level.id
+                                    gameState.reset()
+                                    showingGame = true
+                                }
                             }
                         }
                     }
@@ -126,7 +136,7 @@ struct LevelCardView: View {
 
                 Text(level.name.uppercased())
                     .font(.custom("Orbitron", size: 10).weight(.bold))
-                    .foregroundColor(isUnlocked ? .orange : .gray)
+                    .foregroundColor(isUnlocked ? (level.chapter == 1 ? .orange : .cyan) : .gray)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Stars
@@ -181,7 +191,7 @@ struct LevelCardView: View {
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isUnlocked ? Color.orange.opacity(0.3) : Color.gray.opacity(0.1), lineWidth: 1)
+                    .stroke(isUnlocked ? (level.chapter == 1 ? Color.orange : Color.cyan).opacity(0.3) : Color.gray.opacity(0.1), lineWidth: 1)
             )
         }
         .disabled(!isUnlocked)

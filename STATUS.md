@@ -2,7 +2,7 @@
 
 > **This file is the authoritative, compressed snapshot of the project.**
 > Chat logs are historical input. This file defines current truth.
-> Last reconciled: 2026-11-10 (Session 69)
+> Last reconciled: 2026-11-10 (Session 70)
 
 ---
 
@@ -14,8 +14,8 @@
 | Bundle ID | com.tboliveira.StarshipLander |
 | Platform | iOS (iPhone), iOS 15.0+ |
 | Tech | SwiftUI + SpriteKit + CoreMotion |
-| Current Version | **v2.3.0 (Build 39) "Mission Control"** — Pilot Rank XP, Hangar skins, cinematic landing camera, flight guidance, RCS hold, visual overhaul, sound/haptics + frame-rate fixes. |
-| Version Status | **v2.3.0 Build 39 uploaded to App Store Connect** on 2026-11-10 14:00 CT from the home Mac (`Scripts/release_testflight.sh`, Xcode 26.6 / 17F113, commit `3f72dee`). Archive, export and upload acceptance verified; Apple processing, TestFlight visibility and device gameplay **not yet verified**. PR #4 open. |
+| Current Version | **v3.0.0 (Build 40) "Starship Program"** in development on `claude/v300-starship-program` (PR #5, stacked on v2.3.0). |
+| Version Status | v3.0.0 Build 40: code complete, CI build + tests green, simulator screenshots reviewed, not uploaded. **v2.3.0 Build 39 uploaded to App Store Connect** on 2026-11-10 14:00 CT from the home Mac (`Scripts/release_testflight.sh`, Xcode 26.6 / 17F113, commit `3f72dee`); upload accepted, processing/TestFlight/device not yet verified. |
 | Last Published | v2.2.0 (Build 37) — on App Store (approved/distributed 2026-05-03) |
 | Developer | Thiago Borges de Oliveira / Rabbit Olive Studios |
 | Team ID | 6XK6BNVURL |
@@ -24,6 +24,14 @@
 ---
 
 ## What Is Done
+
+**v3.0.0 — Starship Program (code complete, CI-verified):**
+
+- **Chapter 2 campaign** (levels 11–15): Starbase tower catch, Belly Flop, Phobos low fuel, Ceres meteor shower, Mars Night (`LevelDefinition.swift`, `GameScene+Chapter2.swift`), mission briefings, chapter headers, 45 stars.
+- **Atmospheric drag** (attitude-dependent) + reentry plasma on chapter 2 worlds.
+- **Ghost replay** of personal bests (`GhostRun.swift`).
+- **Folding landing legs** that deploy below 200 pts.
+- **Realistic rendering**: lit hull, soot, shock diamonds, procedural terrain + boulders, sphere-lit planets, concrete pads + floodlights.
 
 **v2.3.0 — Mission Control (code complete, CI-verified):**
 
@@ -77,6 +85,7 @@ v2.2.0 adds three pillars: (1) Daily Challenge system with 75 templates, auto-co
 
 ## Immediate Next Tasks (ordered)
 
+0a. **v3.0.0**: after Build 39 is confirmed in TestFlight, upload Build 40 the same way (`Scripts/release_testflight.sh` on the Mac, branch `claude/v300-starship-program`); create `campaign_11`–`campaign_15` leaderboards (`Scripts/setup_game_center.py`); device-test chapter 2 (belly flop feel, night darkness, meteor fairness).
 0. **v2.3.0**: ~~upload Build 39~~ (done 2026-11-10). Next: confirm processing + TestFlight availability in App Store Connect; device-test (RCS hold, landing camera, Hangar, sound/haptics toggles, campaign startup on Earth/Venus); merge PR #4; submit for review with the RELEASE_NOTES copy. Do not re-upload Build 39.
 
 1. Monitor v2.2.1 Build 38 review status until approved/distributed.

@@ -90,6 +90,8 @@ extension ContentView {
         switch DebugLaunch.value("-screen") {
         case "hangar":
             showingHangar = true
+        case "levels":
+            showingLevelSelect = true
         case "game":
             switch DebugLaunch.value("-mode") {
             case "campaign":
@@ -405,7 +407,7 @@ struct MenuView: View {
                         Image(systemName: "star.fill")
                             .font(.system(size: 14))
                             .foregroundColor(.yellow)
-                        Text("\(campaignState.totalStars)/30 Stars")
+                        Text("\(campaignState.totalStars)/\(LevelDefinition.maxStars) Stars")
                             .font(.custom("Orbitron", size: 13).weight(.bold))
                             .foregroundColor(.yellow)
                     }

@@ -291,7 +291,7 @@ struct HowToPlayView: View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader("Campaign")
 
-            Text("Land on 10 worlds across the solar system. Each planet has unique gravity, thrust, and a special mechanic. Complete a level to unlock the next.")
+            Text("Chapter 1 takes you across 10 worlds of the solar system. Chapter 2, the Starship Program, adds tower catches, belly-flop landings, low-fuel and meteor missions, and a night landing. Each level has its own gravity, thrust and special mechanic; worlds with air slow a ship falling sideways. Complete a level to unlock the next.")
                 .font(.caption)
                 .foregroundColor(.gray)
 

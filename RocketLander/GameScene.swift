@@ -53,7 +53,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let velocityHistorySize = 30
 
     // Elapsed time tracking (for timed daily challenges)
-    private var gameStartTime: TimeInterval = 0
+    var gameStartTime: TimeInterval = 0
 
     // Pre-contact tracking (for end-of-run snapshot — always reflects last update frame)
     private var lastTrackedVerticalSpeed: CGFloat = 0
@@ -61,7 +61,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private var lastTrackedTilt: CGFloat = 0  // signed
 
     // Campaign: wind state
-    private var windForce: CGFloat = 0
+    var windForce: CGFloat = 0
     private var windTime: TimeInterval = 0
 
     // Campaign: Jupiter gust state
@@ -82,6 +82,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private var platformDirections: [CGFloat] = [1, 1, 1]
     private var platformOriginalPositions: [CGPoint] = []
 
+    // Chapter 2 effects + ghost replay
+    var plasmaGlow: SKSpriteNode?
+    var darknessOverlay: SKSpriteNode?
+    var landingLightPool: SKSpriteNode?
+    var towerArms: [SKNode] = []
+    var ghostNode: SKNode?
+    var ghostRun: GhostRun?
+    var ghostSamples: [GhostSample] = []
+    var lastGhostSampleTime: TimeInterval = -1
+    var legsDeployed = false
+
     // Physics categories
     let rocketCategory: UInt32 = 0x1 << 0
     let platformCategory: UInt32 = 0x1 << 1
@@ -90,6 +101,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // RCS attitude hold: extra angular damping while no rotation input is held.
     static let freeAngularDamping: CGFloat = 0.7
     static let rcsHoldAngularDamping: CGFloat = 2.6
+    /// Longest frame (s) that control inputs catch up on; longer hitches (app pauses) are dropped.
+    static let maxStep: TimeInterval = 0.1
 
     // MARK: - Init
 
@@ -165,7 +178,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         createGround()
         createPlatforms()
         platformOriginalPositions = platforms.map { $0.position }
+        plasmaGlow = nil
+        darknessOverlay = nil
+        landingLightPool = nil
+        towerArms = []
+        ghostNode = nil
         createRocket()
+        StarshipArt.setLegs(of: rocket, deployed: false, animated: false)
+        legsDeployed = false
         createFlightGuidance()
 
         hasStarted = false
@@ -173,7 +193,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         gameState.gameOver = false
         gameState.landed = false
         gameState.shouldReset = false
-        gameState.fuel = 100
+        gameState.fuel = activeLevel?.initialFuel ?? 100
         gameState.score = 0
         gameState.verticalVelocity = 0
         gameState.horizontalVelocity = 0
@@ -192,9 +212,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         // Apply visual reentry state for level-based modes (tilt only — velocity applied on start)
         if gameState.currentMode.usesLevelDefinition {
-            rocket.zRotation = CampaignReentryState.initialTilt
-            gameState.tiltAngle = CampaignReentryState.initialTilt
-            lastTrackedTilt = CampaignReentryState.initialTilt
+            rocket.zRotation = spawnTilt
+            gameState.tiltAngle = spawnTilt
+            lastTrackedTilt = spawnTilt
         }
 
         stopThrustSound()
@@ -205,6 +225,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
            let level = LevelDefinition.level(for: gameState.currentLevelId) {
             physicsWorld.gravity = CGVector(dx: 0, dy: level.gravity)
             startLevelEffects(level)
+            startChapter2Effects(level)
         } else {
             physicsWorld.gravity = CGVector(dx: 0, dy: -2.0)
         }
@@ -259,6 +280,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         gameStartTime = currentTime
         rocket.physicsBody?.isDynamic = true
         applyCampaignReentryState()
+        startGhost()
         GameCenterManager.shared.recordAttempt(mode: gameState.currentMode, levelId: gameState.currentLevelId)
         DispatchQueue.main.async {
             self.gameState.flightStarted = true
@@ -267,7 +289,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     private func applyCampaignReentryState() {
         guard gameState.currentMode.usesLevelDefinition else { return }
-        rocket.zRotation = CampaignReentryState.initialTilt
+        rocket.zRotation = spawnTilt
         rocket.physicsBody?.velocity = CGVector(
             dx: CampaignReentryState.initialHorizontalSpeed,
             dy: 0
@@ -346,7 +368,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         frameCounter += 1
         // Control inputs are tuned per 60 fps frame; scale by real elapsed time so
         // thrust, rotation and fuel burn stay identical when frames drop.
-        let frameScale = CGFloat(min(dt, 0.05) * 60)
+        let frameScale = CGFloat(min(dt, GameScene.maxStep) * 60)
 
         if gameStartTime > 0 {
             gameState.elapsedTime = currentTime - gameStartTime
@@ -460,6 +482,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         wasRotatingRight = gameState.isRotatingRight
 
         applyCampaignMechanics(dt: dt, currentTime: currentTime, frameScale: frameScale)
+        applyAtmosphere(dt: dt)
 
         // Track velocity (post-thrust, post-rotation, post-mechanics — authoritative snapshot)
         if let velocity = rocket.physicsBody?.velocity {
@@ -494,6 +517,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
         updateFlightGuidance(thrusting: thrusting)
+        updateNightLanding()
+        updateGhost(flightTime: currentTime - gameStartTime)
         updateCamera(dt: dt)
 
         if rocket.position.y < -100 {
@@ -508,7 +533,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
               let level = LevelDefinition.level(for: gameState.currentLevelId) else { return }
 
         switch level.specialMechanic {
-        case .lightWind:
+        case .lightWind, .nightLanding:
             rocket.physicsBody?.applyForce(CGVector(dx: windForce, dy: 0))
 
         case .heavyTurbulence:
@@ -730,6 +755,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         setEngine(on: false)
         stopThrustSound()
         hideFlightGuidance()
+        hidePlasma()
 
         let isDailyChallenge = gameState.currentMode == .dailyChallenge
         if !isDailyChallenge {
@@ -750,7 +776,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             platformCenterX: platformCenterX
         )
 
-        let message = LandingMessages.successMessage(platform: platform, score: totalScore, speedBand: speedBand)
+        let caughtByTower = isTowerCatchLevel && platform == .c
+        let message = caughtByTower
+            ? "Caught by the tower!"
+            : LandingMessages.successMessage(platform: platform, score: totalScore, speedBand: speedBand)
+        if caughtByTower {
+            closeChopsticks()
+        }
+        saveGhostIfBest(score: totalScore)
 
         DispatchQueue.main.async {
             self.gameState.score = totalScore
@@ -854,6 +887,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         setEngine(on: false)
         stopThrustSound()
         hideFlightGuidance()
+        hidePlasma()
 
         playExplosionSound()
         HapticManager.shared.crash()

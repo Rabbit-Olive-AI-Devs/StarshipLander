@@ -2,7 +2,7 @@
 
 A physics-based rocket landing game for iOS, inspired by SpaceX Starship landings.
 
-**Version:** 2.3.0
+**Version:** 3.0.0
 **Platform:** iOS 15.0+
 **Language:** Swift 5.0
 **Frameworks:** SwiftUI, SpriteKit, CoreMotion, GameKit
@@ -34,6 +34,10 @@ Guide your Starship through a controlled descent and land safely on one of three
 - **Daily Challenge**: New challenge every UTC day, same worldwide. 75 rotating templates with 6 constraint types across all 10 planets. Auto-computed difficulty (1-5★). Countdown timer for timed challenges with time bonus scoring. Pre-challenge briefing screen. See [Daily Challenge Catalog](#daily-challenge-catalog) for full list.
 - **Blue Star Currency**: Earn through daily challenges (+1), streaks (+3 bonus at 5 days), and campaign milestones (10/20/30 stars)
 - **AdMob Integration**: Banner + interstitial ads with App Tracking Transparency support
+- **Campaign Chapter 2 — Starship Program (v3.0.0)**: Starbase tower catch, Belly Flop flip-and-burn, Phobos low-fuel landing, Ceres meteor shower, Mars Night landing by landing light (levels 11–15, 45 stars total)
+- **Atmospheric Drag (v3.0.0)**: chapter 2 worlds with air slow a ship falling sideways ~5.5× more than an upright one; reentry plasma glow at high speed
+- **Ghost Replay (v3.0.0)**: your best landing on each level flies beside you as a translucent "BEST" ghost
+- **Realistic Art (v3.0.0)**: rendered 3D-lit planets with atmospheres, Milky Way starfield, regolith ground texture, and a detailed stainless/heat-tile Starship for every skin (`Scripts/render_art.py` regenerates all of it), plus folding landing legs, shock diamonds and floodlit concrete pads
 - **Pilot Rank (v2.3.0)**: 10 ranks from Cadet to Starship Legend. Every flight earns XP (bonuses for harder pads, clean landings, landing streaks, daily challenges); each promotion awards 5 Blue Stars
 - **Hangar (v2.3.0)**: 7 Starship paint schemes (Stainless, Night Ops, Red Planet, Lunar Gold, Europa Ice, Synthwave, Legend) unlocked with Blue Stars or by Pilot Rank; engine plume color matches the livery
 - **Cinematic Landing Camera (v2.3.0)**: smooth zoom toward the ship on final approach, camera shake on touchdown/explosions
@@ -106,7 +110,8 @@ StarshipLander/
 │   ├── GameScene.swift              # Core update loop, physics, collision
 │   ├── GameScene+Setup.swift        # Starfield, terrain, platforms, rocket creation
 │   ├── GameScene+Effects.swift      # Engine plume, touchdown, explosions, level effects
-│   ├── GameScene+Juice.swift        # Landing camera, flight guidance, dust, hazard callouts, DEBUG autopilot
+│   ├── GameScene+Juice.swift        # Landing camera, flight guidance, dust, leg deploy, hazard callouts, DEBUG autopilot
+│   ├── GameScene+Chapter2.swift     # Atmosphere drag, plasma, tower catch, meteors, night landing, ghost replay
 │   ├── StarshipArt.swift            # Starship node + plume factory, particle textures, Hangar preview scene
 │   ├── GameScene+Sound.swift        # All sound methods
 │   ├── GameScene+Scoring.swift      # Score calculation, platform detection
@@ -125,6 +130,7 @@ StarshipLander/
 │   │   ├── GameCenterManager.swift  # Game Center auth, leaderboards, achievements
 │   │   ├── BlueStarManager.swift    # Blue star currency (earn + spend)
 │   │   ├── PilotProgress.swift      # Pilot Rank XP, landing streaks, flight stats
+│   │   ├── GhostRun.swift           # Best-run recording + interpolation + storage
 │   │   ├── ShipSkin.swift           # Paint schemes + HangarManager (ownership/selection)
 │   │   └── DailyChallenge.swift     # Daily challenge spec, constraints, templates
 │   ├── Views/
@@ -159,6 +165,7 @@ StarshipLander/
 │   ├── LandingEvaluationTests.swift   # Per-platform speed + tilt band tests (20 tests)
 │   ├── PilotProgressTests.swift       # Rank thresholds, XP formula, streaks, promotions
 │   ├── ShipSkinTests.swift            # Hangar ownership, rank unlocks, Blue Star spending
+│   ├── ChapterTwoTests.swift          # Drag model, belly-flop terminal velocity, ghost storage
 │   └── ScoringHelper.swift            # Test-only scoring formula replica
 ├── Docs/
 │   ├── chats/                       # Session summaries (context restoration)
@@ -180,6 +187,7 @@ StarshipLander/
 │   ├── export_chat_transcripts.py   # Claude Code transcript exporter
 │   ├── ci_xcodebuild.sh             # CI build + test
 │   ├── ci_screenshots.sh            # CI simulator screenshots (DEBUG launch args + autopilot)
+│   ├── render_art.py                # Renders planets, sky, ground and ship sprites into Assets.xcassets
 │   └── release_testflight.sh        # Archive + upload to TestFlight from a signed-in Mac
 ├── .github/
 │   ├── pull_request_template.md     # PR checklist template
@@ -449,6 +457,7 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 3.0.0 | Build 40 (in development) | Starship Program: Chapter 2 (5 missions), atmospheric drag, ghost replay, folding legs, realistic rendering pass |
 | 2.3.0 | Build 39 (TestFlight) | Mission Control update: Pilot Rank XP, Hangar skins, cinematic landing camera, flight guidance, RCS hold, visual overhaul, solid terrain, sound/haptics settings fix, frame-rate independent controls |
 | 2.2.1 | Build 38 Submitted | Campaign startup crash fix; local SSD Xcode and GitHub Actions CI verified; submitted for App Store review |
 | 2.2.0 | Build 37 Published | Daily Challenge, Blue Stars, interstitial ads, global rank on game-over; approved/distributed 2026-05-03 but affected by Campaign startup crash |

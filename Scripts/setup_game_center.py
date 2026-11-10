@@ -41,6 +41,11 @@ LEADERBOARDS = [
     {"ref": "campaign_8", "name": "Ganymede"},
     {"ref": "campaign_9", "name": "Io"},
     {"ref": "campaign_10", "name": "Jupiter"},
+    {"ref": "campaign_11", "name": "Starbase"},
+    {"ref": "campaign_12", "name": "Belly Flop"},
+    {"ref": "campaign_13", "name": "Phobos"},
+    {"ref": "campaign_14", "name": "Ceres"},
+    {"ref": "campaign_15", "name": "Mars Night"},
     {"ref": "galaxy_rank", "name": "Galaxy Rank"},
     {"ref": "daily_challenge", "name": "Daily Challenge"},
 ]

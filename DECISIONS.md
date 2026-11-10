@@ -590,3 +590,25 @@ This file records key technical and design decisions, including context, alterna
 **Context:** No Mac was reachable in this session; uploads previously required Xcode Organizer on Thiago's Mac.
 **Decision:** Add `.github/workflows/testflight.yml` (archive + upload with App Store Connect API key stored only as GitHub encrypted secrets `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`, triggered by `testflight/*` tags) and `Scripts/release_testflight.sh` (uses the Xcode-signed-in account on a Mac). Neither reads or stores keys in the repo or session.
 **Consequences:** Credentials must be added by Thiago once (GitHub Settings → Secrets). The API key needs the Admin role for cloud-managed distribution signing.
+
+
+---
+
+## [2026-11-10] v3.0.0 — Chapter 2 "Starship Program" with an attitude-dependent atmosphere
+**Context:** Thiago asked for a creative V3 with new dynamics, levels and more realistic graphics.
+**Options considered:** (1) Retune chapter 1 with a global drag model; (2) Add drag and new mechanics only to new levels; (3) New game mode separate from campaign.
+**Decision:** Option 2. Five new campaign levels (11–15, chapter 2) reuse the existing campaign flow (unlock chain, stars, Next Level, Game Center `campaign_N`). New `LevelDefinition` fields (`chapter`, `atmosphere`, `initialTilt`, `initialFuel`, `briefing`) default to chapter 1 behavior, so levels 1–10, scoring, thresholds and leaderboards are unchanged. Drag: `c = 0.0187 × density × (0.18 + 0.82·|sin tilt|)`, decel `c·v²`.
+**Why:** Delivers the belly-flop/flip-and-burn dynamic and new mechanics without invalidating existing scores or balance.
+**Consequences:** `campaign_11`–`campaign_15` leaderboards must be created in App Store Connect (`Scripts/setup_game_center.py` lists them); until then score submission for those levels fails silently. Galaxy Rank and achievements still count levels 1–10. Total campaign stars are 45.
+
+---
+
+## [2026-11-10] v3.0.0 — Ghost replay of personal bests (local only)
+**Decision:** Record position/attitude at 20 Hz during each flight; on a landing that beats the stored ghost for that Classic/Campaign level, save it to UserDefaults (`ghost.classic`, `ghost.campaign.N`, ≤1800 samples). Daily Challenge has no ghost (changes daily). Replays scale x by screen width.
+**Consequences:** No data leaves the device; no privacy changes.
+
+---
+
+## [2026-11-10] v3.0.0 — Control catch-up window raised to 0.1 s
+**Context:** v2.3.0 scaled inputs by `min(dt, 0.05) × 60`. CI simulator runs below 20 fps still under-thrust because physics integrates the full frame.
+**Decision:** `GameScene.maxStep = 0.1` (down to 10 fps). Longer hitches (app pauses) are still dropped.

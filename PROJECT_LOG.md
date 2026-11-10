@@ -15,7 +15,7 @@ This file documents the development history and decisions for the Starship Lande
 
 ---
 
-## Current Status (2026-11-10, Session 69)
+## Current Status (2026-11-10, Session 70)
 
 | Version | Build | Status |
 |---------|-------|--------|
@@ -34,6 +34,7 @@ This file documents the development history and decisions for the Starship Lande
 | 2.2.0 | 36 | **ON TESTFLIGHT** — menu layout redesign (icons to top-right, safeAreaInset for ad) |
 | 2.2.0 | 37 | **PUBLISHED / LIVE** — Approved and distributed by Apple on 2026-05-03. Live campaign startup crash reported; local hotfix pending Xcode verification/replacement build. |
 | 2.2.1 | 38 | **SUBMITTED FOR REVIEW** — Campaign startup crash hotfix; uploaded, metadata updated, Build 38 attached, review submission waiting. |
+| 3.0.0 | 40 | **CODE COMPLETE, CI GREEN** — "Starship Program": Chapter 2 (5 missions), atmospheric drag, ghost replay, folding legs, realistic rendering. Stacked on 2.3.0. |
 | 2.3.0 | 39 | **UPLOADED TO APP STORE CONNECT** (2026-11-10) — "Mission Control": Pilot Rank, Hangar, landing camera, flight guidance, RCS hold, visual overhaul, settings + frame-rate fixes. Processing/TestFlight not yet confirmed. |
 
 **NEXT STEPS:**
@@ -79,7 +80,9 @@ This file documents the development history and decisions for the Starship Lande
 **BACKLOG (v2.3+):**
 - ~~Blue star spending mechanism~~ — done in v2.3.0 (Hangar)
 - Missions/contracts (multi-flight goals) building on Pilot Rank
-- Ghost replay of personal best per level
+- ~~Ghost replay of personal best per level~~ — done in v3.0.0
+- Chapter 2 achievements (tower catch, belly flop) — need ASC achievement records
+- Throttle control (analog thrust) — revisit gesture approach (earlier DragGesture multi-touch bug)
 - Premium/unlockable realistic Starship skin based on generated concept art
 - iPad support
 - Localization
@@ -665,4 +668,25 @@ This file documents the development history and decisions for the Starship Lande
 - Jarvis ran `Scripts/release_testflight.sh` on the home Mac at commit `3f72dee`. First attempt stopped at archive (exit 65: Developer Program License Agreement update required, then missing provisioning profile). After Thiago accepted the agreement, the second attempt succeeded 13:56–14:00 CT: ARCHIVE SUCCEEDED, Upload succeeded, EXPORT SUCCEEDED; archived metadata 2.3.0 (39); Xcode 26.6 (17F113).
 - Warnings: missing dSYMs for GoogleMobileAds and UserMessagingPlatform (upload unaffected).
 - Not verified: Apple processing, TestFlight visibility, device gameplay.
+
+---
+
+### Session 70 (2026-11-10) - v3.0.0 "Starship Program"
+
+**Goal:** Thiago asked for a creative V3: more realistic graphics, new dynamics and levels.
+
+#### Changes Made:
+1. **Chapter 2 levels 11–15** — `Models/LevelDefinition.swift` (new fields + levels), `GameScene+Chapter2.swift` (tower catch, meteor shower, night landing), `Views/LevelSelectView.swift` (chapter sections), `Views/GameContainerView.swift` (mission briefings), `Models/CampaignState.swift` (default names 11–15), star totals → `LevelDefinition.maxStars`.
+2. **Atmosphere model + plasma** — `GameScene+Chapter2.swift`, hooks in `GameScene.swift`.
+3. **Ghost replay** — `Models/GhostRun.swift`, `GameScene+Chapter2.swift`.
+4. **Folding legs** — `StarshipArt.swift` (`setLegs`), `GameScene+Juice.swift`.
+5. **Rendering** — `StarshipArt.swift` (hull/soot/flap/sphere/boulder/terrain/pad textures, shock diamonds), `GameScene+Setup.swift` (planet shading + halos, Mars features, terrain texture, boulders, pad floodlights).
+6. **Tooling/tests** — `ChapterTwoTests.swift`, level/campaign tests for 15 levels, screenshot script covers chapter 2, `Scripts/setup_game_center.py` lists `campaign_11`–`15`. Version 3.0.0 (40).
+
+#### Key Decisions:
+- DECISIONS.md 2026-11-10 entries (Chapter 2 + atmosphere, ghost replay, control catch-up window).
+
+#### Risks / Follow-ups:
+- Not device-tested; chapter 2 balance tuned analytically and on CI simulator only.
+- New leaderboards must be created in ASC before chapter 2 scores post.
 

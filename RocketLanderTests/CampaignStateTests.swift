@@ -24,7 +24,7 @@ final class CampaignStateTests: XCTestCase {
 
     func testDefaultScoresSeeded() {
         let state = CampaignState()
-        for levelId in 1...10 {
+        for levelId in 1...15 {
             let scores = state.scoresByLevel[levelId] ?? []
             XCTAssertEqual(scores.count, 1, "Level \(levelId) should have 1 default score")
             XCTAssertEqual(scores.first?.score, 1000, "Default score should be 1000")

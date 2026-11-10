@@ -75,7 +75,7 @@ extension GameScene {
         sparks.particleBlendMode = .add
         sparks.particleColorBlendFactor = 1
         sparks.particleColorSequence = SKKeyframeSequence(
-            keyframeValues: [SKColor.white, platform.lightColor, SKColor.yellow],
+            keyframeValues: [SKColor.white, SKColor(red: 1, green: 0.82, blue: 0.45, alpha: 1), SKColor(red: 1, green: 0.55, blue: 0.2, alpha: 1)],
             times: [0, 0.4, 1]
         )
         sparks.position = CGPoint(x: rocket.position.x, y: rocket.position.y + 20)

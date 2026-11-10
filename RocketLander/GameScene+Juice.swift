@@ -125,6 +125,14 @@ extension GameScene {
         let altitude = max(0, feetY - groundY)
         let showGuidance = altitude < 340 && altitude > 2
 
+        // Landing legs swing down on final approach
+        if !legsDeployed && altitude < 200 {
+            legsDeployed = true
+            StarshipArt.setLegs(of: rocket, deployed: true, animated: true)
+            playRotateSound()
+            HapticManager.shared.rotationStart()
+        }
+
         // Descent line color: does the ship fit the pad below?
         var lineColor = SKColor.white
         var lineAlpha: CGFloat = 0.22
@@ -236,17 +244,20 @@ extension GameScene {
     /// Simple descent controller: hold attitude upright and keep descent speed
     /// proportional to altitude. Lands on whatever pad is below the start point.
     func runAutopilot() {
+        func set(_ keyPath: ReferenceWritableKeyPath<GameState, Bool>, _ value: Bool) {
+            if gameState[keyPath: keyPath] != value { gameState[keyPath: keyPath] = value }
+        }
         guard hasStarted else {
-            gameState.isThrusting = true
+            set(\.isThrusting, true)
             return
         }
         let vy = rocket.physicsBody?.velocity.dy ?? 0
         let targetDescent = max(12, min(90, altitudeAboveSurface() * 0.3))
-        gameState.isThrusting = -vy > targetDescent
+        set(\.isThrusting, -vy > targetDescent)
 
         let correction = rocket.zRotation + (rocket.physicsBody?.angularVelocity ?? 0) * 0.4
-        gameState.isRotatingRight = correction > 0.012
-        gameState.isRotatingLeft = correction < -0.012
+        set(\.isRotatingRight, correction > 0.012)
+        set(\.isRotatingLeft, correction < -0.012)
     }
 }
 #endif
