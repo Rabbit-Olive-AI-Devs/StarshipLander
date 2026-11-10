@@ -40,25 +40,23 @@ enum SpecialMechanic: String, Codable {
 }
 
 // MARK: - Celestial Body
+/// Body seen in the sky. `name` selects the rendered `planet_<name>` asset.
 struct CelestialBody {
     let name: String
     let radius: CGFloat
-    let color: SKColor
-    let hasRings: Bool
-    let craterCount: Int
 
     // What you see from each landing location
-    static let earth = CelestialBody(name: "Earth", radius: 50, color: SKColor(red: 0.2, green: 0.5, blue: 0.8, alpha: 1.0), hasRings: false, craterCount: 0)          // from Moon
-    static let sunSmall = CelestialBody(name: "Sun", radius: 30, color: SKColor(red: 1.0, green: 0.9, blue: 0.5, alpha: 1.0), hasRings: false, craterCount: 0)          // from Mars (distant)
-    static let saturn = CelestialBody(name: "Saturn", radius: 50, color: SKColor(red: 0.9, green: 0.8, blue: 0.6, alpha: 1.0), hasRings: true, craterCount: 0)          // from Titan
-    static let jupiter = CelestialBody(name: "Jupiter", radius: 55, color: SKColor(red: 0.8, green: 0.7, blue: 0.5, alpha: 1.0), hasRings: false, craterCount: 0)       // from Europa, Ganymede, Io
-    static let moon = CelestialBody(name: "Moon", radius: 40, color: SKColor(red: 0.85, green: 0.85, blue: 0.8, alpha: 1.0), hasRings: false, craterCount: 5)           // from Earth
-    static let sunMedium = CelestialBody(name: "Sun", radius: 45, color: SKColor(red: 1.0, green: 0.95, blue: 0.6, alpha: 1.0), hasRings: false, craterCount: 0)        // from Venus
-    static let sunLarge = CelestialBody(name: "Sun", radius: 70, color: SKColor(red: 1.0, green: 0.95, blue: 0.7, alpha: 1.0), hasRings: false, craterCount: 0)         // from Mercury (closest)
-    static let marsLarge = CelestialBody(name: "Mars", radius: 115, color: SKColor(red: 0.78, green: 0.38, blue: 0.22, alpha: 1.0), hasRings: false, craterCount: 4)       // from Phobos (huge)
-    static let sunTiny = CelestialBody(name: "Sun", radius: 16, color: SKColor(red: 1.0, green: 0.95, blue: 0.8, alpha: 1.0), hasRings: false, craterCount: 0)           // from Ceres (far)
-    static let phobosSmall = CelestialBody(name: "Phobos", radius: 14, color: SKColor(red: 0.55, green: 0.5, blue: 0.45, alpha: 1.0), hasRings: false, craterCount: 3)  // from Mars at night
-    static let europaSmall = CelestialBody(name: "Europa", radius: 25, color: SKColor(red: 0.7, green: 0.8, blue: 0.9, alpha: 1.0), hasRings: false, craterCount: 0)    // from Jupiter
+    static let earth = CelestialBody(name: "Earth", radius: 50)          // from Moon
+    static let sunSmall = CelestialBody(name: "Sun", radius: 30)          // from Mars (distant)
+    static let saturn = CelestialBody(name: "Saturn", radius: 50)          // from Titan
+    static let jupiter = CelestialBody(name: "Jupiter", radius: 55)       // from Europa, Ganymede, Io
+    static let moon = CelestialBody(name: "Moon", radius: 40)           // from Earth
+    static let sunMedium = CelestialBody(name: "Sun", radius: 45)        // from Venus
+    static let sunLarge = CelestialBody(name: "Sun", radius: 70)         // from Mercury (closest)
+    static let marsLarge = CelestialBody(name: "Mars", radius: 115)       // from Phobos (huge)
+    static let sunTiny = CelestialBody(name: "Sun", radius: 16)           // from Ceres (far)
+    static let phobosSmall = CelestialBody(name: "Phobos", radius: 14)  // from Mars at night
+    static let europaSmall = CelestialBody(name: "Europa", radius: 25)    // from Jupiter
 }
 
 // MARK: - Level Definition

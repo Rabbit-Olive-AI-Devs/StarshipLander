@@ -70,13 +70,9 @@ enum ShipSkin: String, CaseIterable, Identifiable {
 
     struct Palette {
         let body: SKColor
-        let highlight: SKColor
-        let shadow: SKColor
         let stroke: SKColor
         let flap: SKColor
-        let flapHighlight: SKColor
         let heatShield: SKColor
-        let accent: SKColor?
         let flameCore: SKColor
         let flameOuter: SKColor
     }
@@ -86,91 +82,63 @@ enum ShipSkin: String, CaseIterable, Identifiable {
         case .stainless:
             return Palette(
                 body: SKColor(red: 0.82, green: 0.83, blue: 0.85, alpha: 1),
-                highlight: SKColor(red: 0.93, green: 0.94, blue: 0.96, alpha: 1),
-                shadow: SKColor(red: 0.45, green: 0.47, blue: 0.52, alpha: 0.55),
                 stroke: SKColor(red: 0.6, green: 0.6, blue: 0.63, alpha: 1),
                 flap: SKColor(red: 0.18, green: 0.18, blue: 0.2, alpha: 1),
-                flapHighlight: SKColor(red: 0.34, green: 0.34, blue: 0.38, alpha: 0.9),
                 heatShield: SKColor(red: 0.07, green: 0.075, blue: 0.085, alpha: 0.9),
-                accent: nil,
                 flameCore: SKColor(red: 1.0, green: 0.95, blue: 0.75, alpha: 1),
                 flameOuter: SKColor(red: 1.0, green: 0.45, blue: 0.1, alpha: 1)
             )
         case .nightOps:
             return Palette(
                 body: SKColor(red: 0.16, green: 0.17, blue: 0.19, alpha: 1),
-                highlight: SKColor(red: 0.3, green: 0.31, blue: 0.34, alpha: 1),
-                shadow: SKColor(red: 0.02, green: 0.02, blue: 0.03, alpha: 0.6),
                 stroke: SKColor(red: 0.36, green: 0.37, blue: 0.4, alpha: 1),
                 flap: SKColor(red: 0.08, green: 0.08, blue: 0.09, alpha: 1),
-                flapHighlight: SKColor(red: 0.28, green: 0.28, blue: 0.3, alpha: 0.9),
                 heatShield: SKColor(red: 0.03, green: 0.03, blue: 0.035, alpha: 0.95),
-                accent: SKColor(red: 1.0, green: 0.55, blue: 0.1, alpha: 0.9),
                 flameCore: SKColor(red: 1.0, green: 0.9, blue: 0.7, alpha: 1),
                 flameOuter: SKColor(red: 1.0, green: 0.35, blue: 0.05, alpha: 1)
             )
         case .redPlanet:
             return Palette(
                 body: SKColor(red: 0.72, green: 0.38, blue: 0.26, alpha: 1),
-                highlight: SKColor(red: 0.86, green: 0.56, blue: 0.4, alpha: 1),
-                shadow: SKColor(red: 0.35, green: 0.14, blue: 0.08, alpha: 0.6),
                 stroke: SKColor(red: 0.5, green: 0.24, blue: 0.15, alpha: 1),
                 flap: SKColor(red: 0.25, green: 0.12, blue: 0.08, alpha: 1),
-                flapHighlight: SKColor(red: 0.45, green: 0.25, blue: 0.16, alpha: 0.9),
                 heatShield: SKColor(red: 0.12, green: 0.06, blue: 0.04, alpha: 0.9),
-                accent: SKColor(red: 0.95, green: 0.85, blue: 0.7, alpha: 0.8),
                 flameCore: SKColor(red: 1.0, green: 0.92, blue: 0.7, alpha: 1),
                 flameOuter: SKColor(red: 1.0, green: 0.3, blue: 0.08, alpha: 1)
             )
         case .lunarGold:
             return Palette(
                 body: SKColor(red: 0.88, green: 0.7, blue: 0.3, alpha: 1),
-                highlight: SKColor(red: 1.0, green: 0.9, blue: 0.55, alpha: 1),
-                shadow: SKColor(red: 0.55, green: 0.38, blue: 0.08, alpha: 0.6),
                 stroke: SKColor(red: 0.68, green: 0.5, blue: 0.16, alpha: 1),
                 flap: SKColor(red: 0.2, green: 0.18, blue: 0.16, alpha: 1),
-                flapHighlight: SKColor(red: 0.5, green: 0.42, blue: 0.25, alpha: 0.9),
                 heatShield: SKColor(red: 0.1, green: 0.09, blue: 0.08, alpha: 0.9),
-                accent: SKColor.white.withAlphaComponent(0.85),
                 flameCore: SKColor(red: 1.0, green: 1.0, blue: 0.85, alpha: 1),
                 flameOuter: SKColor(red: 1.0, green: 0.6, blue: 0.15, alpha: 1)
             )
         case .europaIce:
             return Palette(
                 body: SKColor(red: 0.88, green: 0.94, blue: 0.98, alpha: 1),
-                highlight: SKColor.white,
-                shadow: SKColor(red: 0.45, green: 0.6, blue: 0.75, alpha: 0.55),
                 stroke: SKColor(red: 0.55, green: 0.72, blue: 0.85, alpha: 1),
                 flap: SKColor(red: 0.2, green: 0.35, blue: 0.5, alpha: 1),
-                flapHighlight: SKColor(red: 0.45, green: 0.65, blue: 0.85, alpha: 0.9),
                 heatShield: SKColor(red: 0.1, green: 0.2, blue: 0.3, alpha: 0.9),
-                accent: SKColor(red: 0.4, green: 0.9, blue: 1.0, alpha: 0.9),
                 flameCore: SKColor(red: 0.85, green: 0.97, blue: 1.0, alpha: 1),
                 flameOuter: SKColor(red: 0.25, green: 0.6, blue: 1.0, alpha: 1)
             )
         case .synthwave:
             return Palette(
                 body: SKColor(red: 0.2, green: 0.12, blue: 0.3, alpha: 1),
-                highlight: SKColor(red: 0.4, green: 0.25, blue: 0.55, alpha: 1),
-                shadow: SKColor(red: 0.06, green: 0.02, blue: 0.1, alpha: 0.6),
                 stroke: SKColor(red: 1.0, green: 0.3, blue: 0.8, alpha: 1),
                 flap: SKColor(red: 0.1, green: 0.05, blue: 0.16, alpha: 1),
-                flapHighlight: SKColor(red: 0.2, green: 0.95, blue: 1.0, alpha: 0.95),
                 heatShield: SKColor(red: 0.05, green: 0.02, blue: 0.08, alpha: 0.95),
-                accent: SKColor(red: 0.2, green: 0.95, blue: 1.0, alpha: 0.95),
                 flameCore: SKColor(red: 0.85, green: 1.0, blue: 0.9, alpha: 1),
                 flameOuter: SKColor(red: 0.2, green: 1.0, blue: 0.45, alpha: 1)
             )
         case .legend:
             return Palette(
                 body: SKColor(red: 0.1, green: 0.1, blue: 0.11, alpha: 1),
-                highlight: SKColor(red: 0.26, green: 0.25, blue: 0.22, alpha: 1),
-                shadow: SKColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 0.6),
                 stroke: SKColor(red: 0.95, green: 0.75, blue: 0.3, alpha: 1),
                 flap: SKColor(red: 0.75, green: 0.56, blue: 0.18, alpha: 1),
-                flapHighlight: SKColor(red: 1.0, green: 0.88, blue: 0.5, alpha: 0.95),
                 heatShield: SKColor(red: 0.04, green: 0.04, blue: 0.04, alpha: 0.95),
-                accent: SKColor(red: 1.0, green: 0.82, blue: 0.35, alpha: 1),
                 flameCore: SKColor(red: 1.0, green: 0.95, blue: 1.0, alpha: 1),
                 flameOuter: SKColor(red: 0.65, green: 0.35, blue: 1.0, alpha: 1)
             )

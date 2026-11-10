@@ -7,13 +7,17 @@ import UIKit
 
 enum StarshipArt {
 
-    // Geometry shared with collision code (see GameScene+Setup.createRocket)
-    static let bodyWidth: CGFloat = 26
-    static let bodyHeight: CGFloat = 70
-    /// Y offset (in ship space) where the engine plume starts.
-    static let nozzleExitY: CGFloat = -bodyHeight / 2 - 9
+    // Geometry shared with collision code (see GameScene+Setup.createRocket).
+    // The art is rendered by Scripts/render_art.py in these same ship-space points.
+    /// Y offset (in ship space) where the engine plume starts (Raptor bell exits).
+    static let nozzleExitY: CGFloat = -44
     /// Lowest point of the landing feet.
-    static let feetBottomY: CGFloat = -bodyHeight / 2 - 19.25
+    static let feetBottomY: CGFloat = -54.25
+    /// Body sprite extents in ship-space points (matches SHIP_X / SHIP_Y in render_art.py).
+    private static let bodyRect = CGRect(x: -30, y: -46, width: 60, height: 90)
+    /// Leg sprite extents relative to its hinge (LEG_X / LEG_Y in render_art.py).
+    private static let legRect = CGRect(x: -3, y: -25, width: 24, height: 28)
+    private static let legHinge = CGPoint(x: 7, y: -31)
 
     // MARK: Textures
 
@@ -25,72 +29,6 @@ enum StarshipArt {
             guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) else { return }
             let center = CGPoint(x: 16, y: 16)
             ctx.cgContext.drawRadialGradient(gradient, startCenter: center, startRadius: 0, endCenter: center, endRadius: 16, options: [])
-        }
-        return SKTexture(image: image)
-    }()
-
-    /// Horizontal cylinder lighting with fine brushed-metal streaks (grayscale, tinted by fillColor).
-    static let hullTexture: SKTexture = {
-        let size = CGSize(width: 64, height: 128)
-        let image = UIGraphicsImageRenderer(size: size).image { ctx in
-            let g = ctx.cgContext
-            let stops: [(CGFloat, CGFloat)] = [(0, 0.42), (0.12, 0.8), (0.26, 1.0), (0.4, 0.9), (0.68, 0.62), (0.88, 0.42), (1, 0.3)]
-            let colors = stops.map { UIColor(white: $0.1, alpha: 1).cgColor } as CFArray
-            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: stops.map { $0.0 }) {
-                g.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: size.width, y: 0), options: [])
-            }
-            var rng = SystemRandomNumberGenerator()
-            for _ in 0..<70 {
-                let x = CGFloat.random(in: 0..<size.width, using: &rng)
-                let alpha = CGFloat.random(in: 0.03...0.1, using: &rng)
-                g.setFillColor(UIColor(white: Bool.random() ? 1 : 0, alpha: alpha).cgColor)
-                g.fill(CGRect(x: x, y: 0, width: 0.6, height: size.height))
-            }
-        }
-        return SKTexture(image: image)
-    }()
-
-    /// Soot darkening near the engines (bottom of the hull), transparent above.
-    static let sootTexture: SKTexture = {
-        let size = CGSize(width: 8, height: 128)
-        let image = UIGraphicsImageRenderer(size: size).image { ctx in
-            let colors = [UIColor.black.withAlphaComponent(0).cgColor, UIColor.black.withAlphaComponent(0).cgColor, UIColor.black.withAlphaComponent(0.5).cgColor] as CFArray
-            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.68, 1]) {
-                ctx.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
-            }
-        }
-        return SKTexture(image: image)
-    }()
-
-    /// Flap depth gradient (lit leading edge to shaded trailing edge).
-    static let flapTexture: SKTexture = {
-        let size = CGSize(width: 32, height: 32)
-        let image = UIGraphicsImageRenderer(size: size).image { ctx in
-            let colors = [UIColor(white: 1, alpha: 1).cgColor, UIColor(white: 0.55, alpha: 1).cgColor] as CFArray
-            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) {
-                ctx.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: size.width, y: size.height), options: [])
-            }
-        }
-        return SKTexture(image: image)
-    }()
-
-    /// Sphere shading for planets and moons: lit from the upper left, dark limb and night side.
-    static let sphereShade: SKTexture = {
-        let size = CGSize(width: 256, height: 256)
-        let image = UIGraphicsImageRenderer(size: size).image { ctx in
-            let g = ctx.cgContext
-            g.addEllipse(in: CGRect(origin: .zero, size: size))
-            g.clip()
-            let colors = [
-                UIColor.white.withAlphaComponent(0.22).cgColor,
-                UIColor.black.withAlphaComponent(0).cgColor,
-                UIColor.black.withAlphaComponent(0.55).cgColor,
-                UIColor.black.withAlphaComponent(0.92).cgColor,
-            ] as CFArray
-            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.3, 0.75, 1]) {
-                let light = CGPoint(x: size.width * 0.32, y: size.height * 0.3)
-                g.drawRadialGradient(gradient, startCenter: light, startRadius: 0, endCenter: CGPoint(x: size.width * 0.45, y: size.height * 0.45), endRadius: size.width * 0.78, options: [.drawsAfterEndLocation])
-            }
         }
         return SKTexture(image: image)
     }()
@@ -109,50 +47,6 @@ enum StarshipArt {
         }
         return SKTexture(image: image)
     }()
-
-    /// Procedural ground: lit surface fading to dark rock, strata bands, regolith speckle.
-    static func terrainTexture(base: SKColor, width: CGFloat, height: CGFloat) -> SKTexture {
-        let size = CGSize(width: max(64, width), height: max(64, height))
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        let image = UIGraphicsImageRenderer(size: size, format: format).image { ctx in
-            let g = ctx.cgContext
-            let colors = [base.blended(with: .white, fraction: 0.12).cgColor, base.cgColor, base.blended(with: .black, fraction: 0.6).cgColor] as CFArray
-            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.25, 1]) {
-                g.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
-            }
-            // Strata
-            for i in 0..<7 {
-                let y0 = size.height * (0.25 + CGFloat(i) * 0.1) + CGFloat.random(in: -6...6)
-                let path = CGMutablePath()
-                path.move(to: CGPoint(x: 0, y: y0))
-                var x: CGFloat = 0
-                while x < size.width {
-                    x += 24
-                    path.addLine(to: CGPoint(x: x, y: y0 + CGFloat.random(in: -3...3)))
-                }
-                g.addPath(path)
-                g.setStrokeColor(UIColor.black.withAlphaComponent(CGFloat.random(in: 0.08...0.18)).cgColor)
-                g.setLineWidth(CGFloat.random(in: 1...3))
-                g.strokePath()
-            }
-            // Regolith speckle and pebbles
-            let count = Int(size.width * size.height / 70)
-            for _ in 0..<count {
-                let r = CGFloat.random(in: 0.5...1.8)
-                let p = CGPoint(x: CGFloat.random(in: 0..<size.width), y: CGFloat.random(in: 0..<size.height))
-                g.setFillColor(UIColor(white: Bool.random() ? 1 : 0, alpha: CGFloat.random(in: 0.05...0.18)).cgColor)
-                g.fillEllipse(in: CGRect(x: p.x, y: p.y, width: r * 2, height: r * 2))
-            }
-            for _ in 0..<Int(size.width / 12) {
-                let w = CGFloat.random(in: 3...9)
-                let p = CGPoint(x: CGFloat.random(in: 0..<size.width), y: CGFloat.random(in: size.height * 0.15..<size.height))
-                g.setFillColor(UIColor.black.withAlphaComponent(0.18).cgColor)
-                g.fillEllipse(in: CGRect(x: p.x, y: p.y, width: w, height: w * 0.6))
-            }
-        }
-        return SKTexture(image: image)
-    }
 
     /// Concrete pad with hazard stripes on both ends.
     static let padTexture: SKTexture = {
@@ -194,127 +88,40 @@ enum StarshipArt {
     // MARK: Ship
 
     static func makeShip(skin: ShipSkin) -> SKNode {
-        let p = skin.palette
         let ship = SKNode()
-        let w = bodyWidth
-        let h = bodyHeight
-        let darkMetal = SKColor(red: 0.15, green: 0.15, blue: 0.17, alpha: 1.0)
 
-        // Main body (cylinder with ogive nose)
-        let bodyPath = CGMutablePath()
-        bodyPath.move(to: CGPoint(x: -w/2, y: -h/2 + 5))
-        bodyPath.addLine(to: CGPoint(x: -w/2, y: h/2 - 18))
-        bodyPath.addQuadCurve(to: CGPoint(x: w/2, y: h/2 - 18), control: CGPoint(x: 0, y: h/2 + 12))
-        bodyPath.addLine(to: CGPoint(x: w/2, y: -h/2 + 5))
-        bodyPath.closeSubpath()
-        // Hull: cylindrical lighting + brushed-steel streaks, tinted by the livery
-        let hull = shape(bodyPath, fill: p.body, stroke: p.stroke, line: 1.2)
-        hull.fillTexture = hullTexture
-        ship.addChild(hull)
-
-        // Engine soot rising from the skirt
-        let soot = shape(bodyPath, fill: .white)
-        soot.fillTexture = sootTexture
-        ship.addChild(soot)
-
-        // Heat-shield tile strip with seams
-        let tilePanel = SKShapeNode(rectOf: CGSize(width: 7, height: 45), cornerRadius: 1.5)
-        tilePanel.position = CGPoint(x: w/2 - 4.5, y: -5)
-        tilePanel.fillColor = p.heatShield
-        tilePanel.strokeColor = SKColor.black.withAlphaComponent(0.35)
-        tilePanel.lineWidth = 0.4
-        ship.addChild(tilePanel)
-        for yPos: CGFloat in stride(from: -23, through: 17, by: 8) {
-            ship.addChild(rect(CGSize(width: 6, height: 0.45), at: CGPoint(x: w/2 - 4.5, y: yPos), fill: SKColor.white.withAlphaComponent(0.18)))
+        // Landing legs on hinge nodes (behind the hull) so they can fold
+        let legTexture = texture(named: "ship_leg")
+        for side in [CGFloat(-1), CGFloat(1)] {
+            let hinge = SKNode()
+            hinge.name = legNodeName
+            hinge.position = CGPoint(x: side * legHinge.x, y: legHinge.y)
+            hinge.userData = ["side": side]
+            hinge.zPosition = -0.5
+            let leg = SKSpriteNode(texture: legTexture, size: legRect.size)
+            leg.anchorPoint = CGPoint(x: -legRect.minX / legRect.width, y: -legRect.minY / legRect.height)
+            leg.xScale = side
+            hinge.addChild(leg)
+            ship.addChild(hinge)
         }
 
-        // Nose sheen
-        let noseSheen = SKShapeNode(ellipseOf: CGSize(width: 11, height: 6))
-        noseSheen.position = CGPoint(x: -3, y: h/2 - 16)
-        noseSheen.fillColor = p.highlight.withAlphaComponent(0.35)
-        noseSheen.strokeColor = .clear
-        ship.addChild(noseSheen)
-
-        // Panel seams
-        for yPos: CGFloat in [-22, -8, 8, 22] {
-            ship.addChild(rect(CGSize(width: w - 4, height: 0.5), at: CGPoint(x: 0, y: yPos), fill: p.stroke.withAlphaComponent(0.5)))
-        }
-        ship.addChild(rect(CGSize(width: 0.5, height: h * 0.6), at: CGPoint(x: 0, y: -2), fill: p.shadow))
-
-        // Livery accent stripe
-        if let accent = p.accent {
-            ship.addChild(rect(CGSize(width: w - 2, height: 2.2), at: CGPoint(x: 0, y: 2), fill: accent))
-            ship.addChild(rect(CGSize(width: w - 6, height: 1), at: CGPoint(x: 0, y: -1.5), fill: accent.withAlphaComponent(0.6)))
-        }
-
-        // Forward flaps
-        for offset in [-1, 1] {
-            let s = CGFloat(offset)
-            let path = CGMutablePath()
-            path.move(to: CGPoint(x: s * w/2, y: 16))
-            path.addLine(to: CGPoint(x: s * (w/2 + 16), y: 13))
-            path.addLine(to: CGPoint(x: s * (w/2 + 12), y: 30))
-            path.addLine(to: CGPoint(x: s * w/2, y: 28))
-            path.closeSubpath()
-            addFlap(path, to: ship, palette: p, hingeX: s * w/2, hingeY: 23, hingeHeight: 12)
-        }
-
-        // Aft flaps
-        for offset in [-1, 1] {
-            let s = CGFloat(offset)
-            let path = CGMutablePath()
-            path.move(to: CGPoint(x: s * w/2, y: -12))
-            path.addLine(to: CGPoint(x: s * (w/2 + 18), y: -10))
-            path.addLine(to: CGPoint(x: s * (w/2 + 14), y: -28))
-            path.addLine(to: CGPoint(x: s * w/2, y: -25))
-            path.closeSubpath()
-            addFlap(path, to: ship, palette: p, hingeX: s * w/2, hingeY: -20, hingeHeight: 14)
-        }
-
-        // Engine skirt
-        let enginePath = CGMutablePath()
-        enginePath.move(to: CGPoint(x: -w/2, y: -h/2 + 5))
-        enginePath.addLine(to: CGPoint(x: -w/2 - 3, y: -h/2 - 8))
-        enginePath.addLine(to: CGPoint(x: w/2 + 3, y: -h/2 - 8))
-        enginePath.addLine(to: CGPoint(x: w/2, y: -h/2 + 5))
-        enginePath.closeSubpath()
-        ship.addChild(shape(enginePath, fill: darkMetal, stroke: p.stroke.withAlphaComponent(0.6), line: 1))
-        ship.addChild(rect(CGSize(width: w + 9, height: 1.5), at: CGPoint(x: 0, y: -h/2 + 3), fill: SKColor(red: 0.58, green: 0.59, blue: 0.62, alpha: 0.9), corner: 0.75))
-
-        // Three Raptor nozzles
-        for i in -1...1 {
-            let nx = CGFloat(i) * 8
-            let ny = -h/2 - 5
-            let nozzlePath = CGMutablePath()
-            nozzlePath.move(to: CGPoint(x: nx - 3, y: ny + 3))
-            nozzlePath.addLine(to: CGPoint(x: nx - 4, y: ny - 4))
-            nozzlePath.addLine(to: CGPoint(x: nx + 4, y: ny - 4))
-            nozzlePath.addLine(to: CGPoint(x: nx + 3, y: ny + 3))
-            nozzlePath.closeSubpath()
-            ship.addChild(shape(nozzlePath, fill: SKColor(red: 0.1, green: 0.1, blue: 0.12, alpha: 1), stroke: darkMetal, line: 0.5))
-        }
-
-        // Landing legs + feet, each on a hinge node so they can fold against the hull
-        for offset in [-1, 1] {
-            let s = CGFloat(offset)
-            let hinge = CGPoint(x: s * 10, y: -h/2 + 3)
-            let leg = SKNode()
-            leg.name = legNodeName
-            leg.position = hinge
-            leg.userData = ["side": s]
-            let legPath = CGMutablePath()
-            legPath.move(to: CGPoint(x: s * 8 - hinge.x, y: -h/2 + 2 - hinge.y))
-            legPath.addLine(to: CGPoint(x: s * 22 - hinge.x, y: -h/2 - 18 - hinge.y))
-            legPath.addLine(to: CGPoint(x: s * 25 - hinge.x, y: -h/2 - 17 - hinge.y))
-            legPath.addLine(to: CGPoint(x: s * 12 - hinge.x, y: -h/2 + 4 - hinge.y))
-            legPath.closeSubpath()
-            leg.addChild(shape(legPath, fill: SKColor(red: 0.45, green: 0.45, blue: 0.48, alpha: 1), stroke: p.stroke.withAlphaComponent(0.6), line: 1))
-            leg.addChild(rect(CGSize(width: 8, height: 2.5), at: CGPoint(x: s * 23.5 - hinge.x, y: -h/2 - 18 - hinge.y), fill: SKColor(red: 0.35, green: 0.35, blue: 0.38, alpha: 1), corner: 1))
-            ship.addChild(leg)
-        }
-
+        let body = SKSpriteNode(texture: texture(named: "ship_\(skin.rawValue)"), size: bodyRect.size)
+        body.anchorPoint = CGPoint(x: -bodyRect.minX / bodyRect.width, y: -bodyRect.minY / bodyRect.height)
+        ship.addChild(body)
         return ship
     }
+
+    /// Cached, mipmapped texture from the asset catalog.
+    static func texture(named name: String) -> SKTexture {
+        if let cached = textureCache[name] { return cached }
+        let texture = SKTexture(imageNamed: name)
+        texture.usesMipmaps = true
+        texture.filteringMode = .linear
+        textureCache[name] = texture
+        return texture
+    }
+
+    private static var textureCache: [String: SKTexture] = [:]
 
     // MARK: Landing legs
 
@@ -347,7 +154,7 @@ enum StarshipArt {
         e.particleBirthRate = 0
         e.particleLifetime = 0.34
         e.particleLifetimeRange = 0.12
-        e.particlePositionRange = CGVector(dx: 16, dy: 2)
+        e.particlePositionRange = CGVector(dx: 12, dy: 2)
         e.emissionAngle = -.pi / 2
         e.emissionAngleRange = 0.2
         e.particleSpeed = 210
@@ -371,7 +178,7 @@ enum StarshipArt {
     /// Engine bell glow sprite (additive), shown while thrusting.
     static func makeEngineGlow(skin: ShipSkin) -> SKSpriteNode {
         let glow = SKSpriteNode(texture: softDot)
-        glow.size = CGSize(width: 46, height: 30)
+        glow.size = CGSize(width: 34, height: 24)
         glow.color = skin.palette.flameOuter
         glow.colorBlendFactor = 1
         glow.blendMode = .add
@@ -391,34 +198,6 @@ enum StarshipArt {
             glow.addChild(diamond)
         }
         return glow
-    }
-
-    // MARK: Helpers
-
-    private static func shape(_ path: CGPath, fill: SKColor, stroke: SKColor = .clear, line: CGFloat = 0) -> SKShapeNode {
-        let node = SKShapeNode(path: path)
-        node.fillColor = fill
-        node.strokeColor = stroke
-        node.lineWidth = line
-        return node
-    }
-
-    private static func rect(_ size: CGSize, at position: CGPoint, fill: SKColor, corner: CGFloat = 0) -> SKShapeNode {
-        let node = SKShapeNode(rectOf: size, cornerRadius: corner)
-        node.position = position
-        node.fillColor = fill
-        node.strokeColor = .clear
-        return node
-    }
-
-    private static func addFlap(_ path: CGPath, to ship: SKNode, palette p: ShipSkin.Palette, hingeX: CGFloat, hingeY: CGFloat, hingeHeight: CGFloat) {
-        let flap = shape(path, fill: p.flap, stroke: p.stroke.withAlphaComponent(0.7), line: 1)
-        flap.fillTexture = flapTexture
-        ship.addChild(flap)
-        let bevel = shape(path, fill: .clear, stroke: p.flapHighlight, line: 0.6)
-        bevel.alpha = 0.75
-        ship.addChild(bevel)
-        ship.addChild(rect(CGSize(width: 2, height: hingeHeight), at: CGPoint(x: hingeX, y: hingeY), fill: p.stroke.withAlphaComponent(0.7)))
     }
 }
 
