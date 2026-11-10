@@ -15,7 +15,7 @@
 | Platform | iOS (iPhone), iOS 15.0+ |
 | Tech | SwiftUI + SpriteKit + CoreMotion |
 | Current Version | **v2.3.0 (Build 39) "Mission Control"** — Pilot Rank XP, Hangar skins, cinematic landing camera, flight guidance, RCS hold, visual overhaul, sound/haptics + frame-rate fixes. |
-| Version Status | **v2.3.0 Build 39 code complete on branch `claude/v230-mission-control`** (PR to main). GitHub Actions: build + full test suite green, simulator screenshots verified. TestFlight upload pending: needs the `testflight.yml` secrets or `Scripts/release_testflight.sh` on a Mac. v2.2.1 Build 38 status from May: submitted for review. |
+| Version Status | **v2.3.0 Build 39 uploaded to App Store Connect** on 2026-11-10 14:00 CT from the home Mac (`Scripts/release_testflight.sh`, Xcode 26.6 / 17F113, commit `3f72dee`). Archive, export and upload acceptance verified; Apple processing, TestFlight visibility and device gameplay **not yet verified**. PR #4 open. |
 | Last Published | v2.2.0 (Build 37) — on App Store (approved/distributed 2026-05-03) |
 | Developer | Thiago Borges de Oliveira / Rabbit Olive Studios |
 | Team ID | 6XK6BNVURL |
@@ -77,7 +77,7 @@ v2.2.0 adds three pillars: (1) Daily Challenge system with 75 templates, auto-co
 
 ## Immediate Next Tasks (ordered)
 
-0. **v2.3.0**: add `ASC_KEY_ID` / `ASC_ISSUER_ID` / `ASC_KEY_P8` GitHub secrets and push tag `testflight/v2.3.0-b39` (or run `Scripts/release_testflight.sh` on the Mac); device-test on TestFlight (feel of RCS hold, landing camera, Hangar); merge PR; submit for review with the RELEASE_NOTES copy.
+0. **v2.3.0**: ~~upload Build 39~~ (done 2026-11-10). Next: confirm processing + TestFlight availability in App Store Connect; device-test (RCS hold, landing camera, Hangar, sound/haptics toggles, campaign startup on Earth/Venus); merge PR #4; submit for review with the RELEASE_NOTES copy. Do not re-upload Build 39.
 
 1. Monitor v2.2.1 Build 38 review status until approved/distributed.
 2. Verify the replacement App Store/TestFlight build on device as soon as Apple makes it available.
@@ -126,6 +126,8 @@ v2.2.0 adds three pillars: (1) Daily Challenge system with 75 templates, auto-co
 - **VPN blocks Game Center** — always disable VPN during GC testing
 - **ASC draft deletion removes releases** — must re-run `--create-releases` if draft is deleted
 - **TestFlight masks GC issues** — TestFlight can access draft GC resources, App Store builds cannot
+- **Missing dSYMs for GoogleMobileAds / UserMessagingPlatform** — Build 39 upload warned that crash symbols for those frameworks were not included. Upload unaffected; crash reports inside those SDKs will be unsymbolicated. Separate fix for a future build.
+- **GitHub TestFlight workflow** has no App Store Connect secrets configured (run 42870749853 failed at the credential check). Mac upload via `Scripts/release_testflight.sh` is the working route.
 - **v2.3.0 not yet device-tested** — verified on CI simulator only (software rendering, low FPS). Check feel of RCS hold (2.6 damping) and zoom on a real iPhone before submitting.
 - **Git HTTP/2 broken pipe** — large pushes require `git config http.version HTTP/1.1`
 

@@ -1,7 +1,7 @@
 # Release Notes
 
 ## Version 2.3.0 (Build 39) — "Mission Control"
-**Status:** Release candidate for TestFlight. CI build + full test suite green on GitHub Actions; simulator screenshots verified.
+**Status:** Uploaded to App Store Connect on 2026-11-10 (14:00 CT) from commit `3f72dee` with Xcode 26.6 (17F113); upload accepted. Processing/TestFlight availability not yet confirmed. Not submitted for review.
 
 ### Overview
 The biggest update since Campaign: a reason to come back every day (Pilot Rank + Hangar), a landing that feels cinematic, flight aids that make the game learnable, and a visual overhaul of every world. Also fixes the Sound/Haptics toggles and a frame-rate bug that could make the engine feel weak.
