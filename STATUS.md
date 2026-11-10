@@ -2,7 +2,7 @@
 
 > **This file is the authoritative, compressed snapshot of the project.**
 > Chat logs are historical input. This file defines current truth.
-> Last reconciled: 2026-05-03 (Session 68)
+> Last reconciled: 2026-11-10 (Session 69)
 
 ---
 
@@ -14,8 +14,8 @@
 | Bundle ID | com.tboliveira.StarshipLander |
 | Platform | iOS (iPhone), iOS 15.0+ |
 | Tech | SwiftUI + SpriteKit + CoreMotion |
-| Current Version | **v2.2.1 (Build 38) submitted for App Store review** for the live v2.2.0 Build 37 Campaign startup crash. |
-| Version Status | **v2.2.1 Build 38 is waiting for App Store review.** Session 67 fixed the likely crash root cause: campaign attempt tracking saved a nested `[Int: Int]` dictionary into `UserDefaults`, which can terminate the app because property-list dictionaries require string keys. Session 68 restored local SSD Xcode verification, uploaded Build 38, updated App Store Connect hotfix metadata, attached the build, and submitted it for review. |
+| Current Version | **v2.3.0 (Build 39) "Mission Control"** — Pilot Rank XP, Hangar skins, cinematic landing camera, flight guidance, RCS hold, visual overhaul, sound/haptics + frame-rate fixes. |
+| Version Status | **v2.3.0 Build 39 code complete on branch `claude/v230-mission-control`** (PR to main). GitHub Actions: build + full test suite green, simulator screenshots verified. TestFlight upload pending: needs the `testflight.yml` secrets or `Scripts/release_testflight.sh` on a Mac. v2.2.1 Build 38 status from May: submitted for review. |
 | Last Published | v2.2.0 (Build 37) — on App Store (approved/distributed 2026-05-03) |
 | Developer | Thiago Borges de Oliveira / Rabbit Olive Studios |
 | Team ID | 6XK6BNVURL |
@@ -24,6 +24,16 @@
 ---
 
 ## What Is Done
+
+**v2.3.0 — Mission Control (code complete, CI-verified):**
+
+- **Pilot Rank**: `PilotProgress.swift` — XP per flight, 10 ranks, landing streaks, 5 Blue Stars per promotion; menu rank card, game-over XP panel.
+- **Hangar**: `ShipSkin.swift` + `HangarView.swift` — 7 cosmetic paint schemes (Blue Stars 10–150 or rank unlocks), live SpriteKit previews, equipped skin used in game/menu.
+- **Landing camera + guidance**: `GameScene+Juice.swift` — approach zoom (0.84×), shake, descent guide line, ↓speed/ALT readout, ground dust, gust warning.
+- **Feel fixes**: RCS attitude hold, frame-rate independent thrust/rotation/fuel, solid terrain on all worlds, collision box includes legs.
+- **Visuals**: per-planet skies, horizon glow, distant ridge, sprite starfield + shooting stars, particle plume/explosions/touchdown (`StarshipArt.swift`, `GameScene+Effects.swift`).
+- **Settings fix**: Sound and Haptics toggles now honored.
+- **CI**: screenshot job with DEBUG launch args/autopilot; TestFlight workflow + local upload script.
 
 These features are fully implemented, build-verified, and included in the current codebase:
 
@@ -66,6 +76,8 @@ v2.2.0 adds three pillars: (1) Daily Challenge system with 75 templates, auto-co
 ---
 
 ## Immediate Next Tasks (ordered)
+
+0. **v2.3.0**: add `ASC_KEY_ID` / `ASC_ISSUER_ID` / `ASC_KEY_P8` GitHub secrets and push tag `testflight/v2.3.0-b39` (or run `Scripts/release_testflight.sh` on the Mac); device-test on TestFlight (feel of RCS hold, landing camera, Hangar); merge PR; submit for review with the RELEASE_NOTES copy.
 
 1. Monitor v2.2.1 Build 38 review status until approved/distributed.
 2. Verify the replacement App Store/TestFlight build on device as soon as Apple makes it available.
@@ -114,6 +126,7 @@ v2.2.0 adds three pillars: (1) Daily Challenge system with 75 templates, auto-co
 - **VPN blocks Game Center** — always disable VPN during GC testing
 - **ASC draft deletion removes releases** — must re-run `--create-releases` if draft is deleted
 - **TestFlight masks GC issues** — TestFlight can access draft GC resources, App Store builds cannot
+- **v2.3.0 not yet device-tested** — verified on CI simulator only (software rendering, low FPS). Check feel of RCS hold (2.6 damping) and zoom on a real iPhone before submitting.
 - **Git HTTP/2 broken pipe** — large pushes require `git config http.version HTTP/1.1`
 
 ---

@@ -5,6 +5,34 @@ All notable changes to the Starship Lander project will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] — Build 39 (Phase: Engagement — "Mission Control")
+
+### Added
+- **Pilot Rank**: 10 ranks (Cadet → Starship Legend) driven by XP from every flight. Landings earn 25 XP plus bonuses: Precision pad +15, Elite pad +40, clean (SAFE) landing +15, landing streak +4 per streak level (capped at 10), successful Daily Challenge +30. Crashes earn 5 XP. Each promotion awards 5 Blue Stars. Rank card with XP bar on the menu; animated XP gain, streak and promotion banner on the game-over screen (`PilotProgress.swift`, `ProgressionViews.swift`).
+- **Hangar**: 7 Starship paint schemes with matching engine plume colors. Blue Stars finally have a use (prices 10–150) and several schemes unlock free at Pilot Rank 3/5/7/10 (`ShipSkin.swift`, `HangarView.swift`). Menu shows the equipped ship rendered live with SpriteKit; tap it to open the Hangar.
+- **Cinematic landing camera**: `SKCameraNode` eases in to 0.84× zoom during the last 260 pts of descent, always clamped inside the scene; touchdown bump and explosion shake.
+- **Flight guidance**: descent guide line from the landing legs to the surface (green = both legs fit the pad below, yellow = edge), on-ship `↓speed ALT` readout colored by the pad-below's vertical bands, Jupiter gust warning callout.
+- **RCS attitude hold**: angular damping rises from 0.7 to 2.6 while no rotation input is held (requires fuel), so the ship stops spinning when you let go.
+- **First-flight coaching**: "HOLD THRUST TO BEGIN DESCENT" prompt before every flight; the three landing rules for pilots with fewer than 3 flights.
+- **Visuals**: per-planet sky gradients (the level `skyColorTop/Bottom` values were defined but never used), horizon glow, hazy distant ridge, sprite-based starfield dimmed under bright atmospheres, shooting stars, particle engine plume + engine glow, ground dust kicked up by the plume, touchdown dust ring and sparks, particle explosion with flash, shockwave, smoke and paint-matched hull debris.
+- Results panel appears after a short beat (0.7 s landing / 1.0 s crash) so the touchdown or explosion is visible, and scrolls on small screens.
+- Last pilot name is remembered and pre-filled in the high-score sheet.
+- `BlueStarManager.spend(_:)` / `award(_:)`.
+- Tests: `PilotProgressTests`, `ShipSkinTests`.
+- CI: simulator screenshot job (`Scripts/ci_screenshots.sh`) using DEBUG-only launch arguments (`-screen`, `-mode`, `-level`, `-autopilot`); `claude/**` branches trigger CI.
+- Release: `.github/workflows/testflight.yml` (archive + upload with App Store Connect API key secrets) and `Scripts/release_testflight.sh` (one-command upload from a signed-in Mac).
+
+### Fixed
+- **Sound and Haptics settings were ignored** — toggles were saved but never read; every sound and haptic now respects them.
+- **Frame-rate dependent controls** — thrust, rotation and fuel burn were applied per rendered frame, so any frame drop made the engine weaker relative to gravity. Inputs now scale by elapsed time at the tuned 60 fps rate (identical feel at 60 fps).
+- **Ship sank into the ground** — terrain had no collision outside Ganymede, so a ship missing the pads fell through the hills to an invisible floor. Terrain is now solid on every world.
+- **Legs floated / clipped on the pad** — the collision box ended 11 pts above the feet; it now covers hull + landing legs so the feet touch the pad.
+- Menu play buttons were pushed below the fold; menu reordered (title → ship → rank → play buttons → leaderboard).
+
+### Changed
+- Starship drawing moved to `StarshipArt.makeShip(skin:)` (shared by game, Hangar and menu); `ShapeViews.swift` (old SwiftUI rocket illustration) removed.
+- Engine flame is a persistent emitter toggled by birth rate instead of nodes created/removed every thrust press.
+
 ## [2.2.1] — Build 38 Hotfix
 
 ### Fixed

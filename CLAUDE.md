@@ -513,21 +513,23 @@ Credentials, secrets, and private keys must NEVER be handled through Claude Code
 
 ```
 RocketLander/
-  Models/        — GameState, HighScoreManager, LandingPlatform, LandingMessages, LandingThresholds, LevelDefinition, CampaignState, GameCenterManager
-  Views/         — GameContainerView, GameOverView, HUDViews, ControlViews, ShapeViews, LeaderboardView, HowToPlayView, LevelSelectView, ShareScoreCardView
+  Models/        — GameState, HighScoreManager, LandingPlatform, LandingMessages, LandingThresholds, LevelDefinition, CampaignState, GameCenterManager, DailyChallenge, BlueStarManager, PilotProgress, ShipSkin
+  Views/         — GameContainerView, GameOverView, HUDViews, ControlViews, LeaderboardView, HowToPlayView, LevelSelectView, ShareScoreCardView, DailyChallengeBriefingView, HangarView, ProgressionViews
   Haptics/       — HapticManager
   GameScene.swift           — Core update loop, physics, collision
   GameScene+Setup.swift     — Scene setup, terrain, platforms
   GameScene+Effects.swift   — Visual effects (wind, haze, shimmer, eruptions)
   GameScene+Sound.swift     — Audio management
   GameScene+Scoring.swift   — Score calculation
+  GameScene+Juice.swift     — Landing camera, flight guidance, dust, DEBUG autopilot
+  StarshipArt.swift         — Starship node/plume factory, textures, preview scene
   ContentView.swift         — ContentView + MenuView
 Docs/chats/      — Session summaries
 Docs/GROWTH_PLAN.md — Organic growth strategy (ASO, share triggers, screenshots)
 Scripts/         — Python utility scripts
 Screenshots/     — App Store screenshots
 build/           — Build artifacts (ExportOptions.plist)
-.github/         — PR template
+.github/         — PR template, ios-ci.yml, testflight.yml
 ```
 
 ---

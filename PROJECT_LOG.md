@@ -15,7 +15,7 @@ This file documents the development history and decisions for the Starship Lande
 
 ---
 
-## Current Status (2026-05-03, Session 68)
+## Current Status (2026-11-10, Session 69)
 
 | Version | Build | Status |
 |---------|-------|--------|
@@ -34,8 +34,10 @@ This file documents the development history and decisions for the Starship Lande
 | 2.2.0 | 36 | **ON TESTFLIGHT** — menu layout redesign (icons to top-right, safeAreaInset for ad) |
 | 2.2.0 | 37 | **PUBLISHED / LIVE** — Approved and distributed by Apple on 2026-05-03. Live campaign startup crash reported; local hotfix pending Xcode verification/replacement build. |
 | 2.2.1 | 38 | **SUBMITTED FOR REVIEW** — Campaign startup crash hotfix; uploaded, metadata updated, Build 38 attached, review submission waiting. |
+| 2.3.0 | 39 | **CODE COMPLETE, CI GREEN** — "Mission Control": Pilot Rank, Hangar, landing camera, flight guidance, RCS hold, visual overhaul, settings + frame-rate fixes. TestFlight upload pending credentials (see STATUS.md). |
 
 **NEXT STEPS:**
+0. v2.3.0: configure TestFlight secrets (or run `Scripts/release_testflight.sh` on the Mac), push tag `testflight/v2.3.0-b39`, device-test, merge PR, submit.
 1. Monitor v2.2.1 Build 38 App Store review status.
 2. Verify replacement build on device/App Store/TestFlight after approval/distribution.
 3. Confirm Campaign startup on Earth, Venus, and an early unlocked planet in the replacement build.
@@ -75,7 +77,9 @@ This file documents the development history and decisions for the Starship Lande
 - [blocked] Physical device install/test (iPhone 16 TBO offline on this machine)
 
 **BACKLOG (v2.3+):**
-- Blue star spending mechanism (earn-only for now)
+- ~~Blue star spending mechanism~~ — done in v2.3.0 (Hangar)
+- Missions/contracts (multi-flight goals) building on Pilot Rank
+- Ghost replay of personal best per level
 - Premium/unlockable realistic Starship skin based on generated concept art
 - iPad support
 - Localization
@@ -101,436 +105,9 @@ This file documents the development history and decisions for the Starship Lande
 
 ## Development History
 
-> **Sessions 1-48** (2026-01-07 through 2026-02-05) have been archived to `PROJECT_LOG_ARCHIVE.md`.
+> **Sessions 1-57** (2026-01-07 through 2026-02-06) have been archived to `PROJECT_LOG_ARCHIVE.md`.
 > The archive includes a project history summary at the top for quick context restoration.
 > Consult the archive when investigating decisions or changes from earlier sessions.
-
----
-
-### Session 49 (2026-02-06) - v2.0.3 Build 30 Approved
-
-**Goal:** Note approval of v2.0.3 Build 30.
-
-#### Changes Made:
-- Updated documentation to note Build 30 approved and live on App Store (2026-02-06).
-
-#### Commits:
-- `2d70294` — Note v2.0.3 Build 30 approved and live on App Store
-
----
-
-### Session 50 (2026-02-06) - v2.1.0 Community Phase Implementation
-
-**Goal:** Implement v2.1.0 Community phase: Game Center integration (auth, 12 leaderboards, 10 achievements, Galaxy Rank) and Share Score Card.
-
-#### Changes Made:
-
-1. **GameCenterManager.swift (NEW)** — 283 lines. ObservableObject + singleton. Auth, 12 leaderboard IDs, score submission (fire-and-forget), Galaxy Rank fetch/display, 10 achievement checks, persistent tracking state (safePlatformCLevels, attemptsByLevel via UserDefaults).
-
-2. **RocketLander.entitlements (NEW)** — Game Center capability.
-
-3. **ShareScoreCardView.swift (NEW)** — 148 lines. SwiftUI card rendering (320pt, dark gradient, orange border). ShareHelper with ImageRenderer (iOS 16+) / UIHostingController snapshot (iOS 15). Native share sheet.
-
-4. **ContentView.swift** — Added gameCenterManager StateObject, `.onAppear { authenticate() }`, passed to all child views. MenuView: Galaxy Rank badge, GKAccessPoint show/hide, fetchGalaxyRank on appear.
-
-5. **GameContainerView.swift** — Added campaignState and gameCenterManager params, passed campaignState through to GameScene.
-
-6. **GameScene.swift** — Added campaignState property, updated init. recordAttempt() in startGame(). GC score submission + achievement check in successfulLanding().
-
-7. **LeaderboardView.swift** — Added gameCenterManager param, Galaxy Rank header, "View Global Rankings" button (GKGameCenterViewController), GKDismissHandler class.
-
-8. **LevelSelectView.swift** — Added gameCenterManager param, Galaxy Rank explanation section after level grid.
-
-9. **GameOverView.swift** — Share button (landing only), shareScoreCard() method building ShareScoreCardView from gameState.
-
-10. **project.pbxproj** — Added GameCenterManager.swift, ShareScoreCardView.swift, RocketLander.entitlements, CODE_SIGN_ENTITLEMENTS.
-
-#### Files Created:
-- `RocketLander/Models/GameCenterManager.swift`
-- `RocketLander/Views/ShareScoreCardView.swift`
-- `RocketLander/RocketLander.entitlements`
-
-#### Files Modified:
-- `RocketLander/ContentView.swift`
-- `RocketLander/GameScene.swift`
-- `RocketLander/Views/GameContainerView.swift`
-- `RocketLander/Views/LeaderboardView.swift`
-- `RocketLander/Views/LevelSelectView.swift`
-- `RocketLander/Views/GameOverView.swift`
-- `RocketLander.xcodeproj/project.pbxproj`
-
-#### Build Status:
-- Build succeeds, 91/91 tests pass
-
-#### Key Decisions:
-- Galaxy Rank uses 12th leaderboard (galaxy_rank) = sum of best scores across 10 campaign levels
-- Achievement checks use composite landing band (worst of V/H/tilt) not speedBand alone
-- Tilt checks use radians internally (e.g., 2.0° = 2.0 × π/180)
-- First Try Perfection is campaign-only, tracked via attemptsByLevel
-- GC auth is non-intrusive — features hidden when not signed in
-- Singleton pattern on GameCenterManager needed for fire-and-forget calls from GameScene
-
-#### Definition of Done:
-- [x] GameCenterManager with auth, leaderboards, achievements
-- [x] 12 leaderboard IDs defined
-- [x] 10 achievement IDs and check logic
-- [x] Galaxy Rank on 3 UI layers (menu, campaign, leaderboard)
-- [x] GKAccessPoint on menu
-- [x] Share Score Card rendering + native share sheet
-- [x] Share button on game-over (landing only)
-- [x] Build succeeds
-- [x] 91/91 tests pass
-- [x] All documentation updated
-- [x] Session summary created
-- [ ] Version bump (pending user approval)
-- [ ] App Store Connect configuration (manual)
-- [ ] Device testing
-
----
-
-### Session 51 (2026-02-06) - v2.1.0 TestFlight + ASC Setup + GC Auth Fix
-
-**Goal:** Version bump to 2.1.0, upload to TestFlight, create GC resources in ASC via API, fix GC auth bug found during device testing.
-
-#### Changes Made:
-
-1. **Version bump** (`Info.plist`): v2.0.3 Build 30 → v2.1.0 Build 31. Archived and uploaded to TestFlight.
-
-2. **setup_game_center.py (NEW)** (`Scripts/setup_game_center.py`): Python script to create Game Center leaderboards and achievements via App Store Connect REST API.
-   - JWT authentication with ES256 signing
-   - Reads credentials from env vars (ASC_ISSUER_ID, ASC_KEY_ID, ASC_PRIVATE_KEY) or local .p8 files
-   - Creates 12 leaderboards with en-US localizations
-   - Creates 10 achievements with en-US localizations
-   - Idempotent — skips existing resources
-
-3. **App Store Connect configured**: All 12 leaderboards and 10 achievements created successfully via API.
-   - 12 leaderboards: classic, campaign_1-10, galaxy_rank (INTEGER format, BEST_SCORE, DESC sort)
-   - 10 achievements: eagle_has_landed through master_lander (200 total points)
-   - All with en-US localizations
-
-4. **Game Center auth fix** (`GameCenterManager.swift`, `LeaderboardView.swift`): Device testing of Build 31 revealed "View Global Rankings" showed "Sign in to Game Center" despite being signed in.
-   - **Root cause**: `authenticateHandler`'s `viewController` parameter was silently dropped. When non-nil, this VC must be presented to complete per-app GC authentication.
-   - **Fix 1**: Present auth `viewController` on topmost VC when provided
-   - **Fix 2**: Added `topViewController()` helper (walks presentation chain from root)
-   - **Fix 3**: `GKGameCenterViewController` now presented from topmost VC (not root) and anchored to `galaxy_rank` leaderboard
-   - Build 32 uploaded to TestFlight with fix
-
-#### Bug Fixed in Script:
-- `defaultFormatter` attribute requires string enum (`"INTEGER"`) not nested object. Fixed format and improved error reporting.
-
-#### Files Created:
-- `Scripts/setup_game_center.py`
-
-#### Files Modified:
-- `RocketLander/Info.plist` — v2.1.0, Build 31→32
-- `RocketLander/Models/GameCenterManager.swift` — auth VC presentation, topViewController() helper, UIKit import
-- `RocketLander/Views/LeaderboardView.swift` — topmost VC presenter, galaxy_rank anchor
-
-#### Build Status:
-- Build succeeds, 91/91 tests pass
-
-#### Commits:
-- `3c91c96` — Bump version to 2.1.0 Build 31 for TestFlight
-- `87125b4` — Add ASC Game Center setup script + session 51 documentation
-- `b7580aa` — Fix Game Center auth: present sign-in VC + topmost presenter (Build 32)
-
-#### Definition of Done:
-- [x] Version bumped to 2.1.0 Build 31, then Build 32
-- [x] Build 31 + 32 uploaded to TestFlight
-- [x] setup_game_center.py script created
-- [x] 12 leaderboards created in ASC (verified)
-- [x] 10 achievements created in ASC (verified)
-- [x] All localizations (en-US) added
-- [x] Script defaultFormatter bug fixed
-- [x] GC auth bug fixed (present authenticateHandler VC)
-- [x] GC dashboard presented from topmost VC
-- [x] Dashboard anchored to galaxy_rank leaderboard
-- [x] All documentation updated
-- [ ] Device testing (GC auth, score submission, achievements, Galaxy Rank, share card)
-
----
-
-### Session 52 (2026-02-06) - v2.1.0 Device Testing + VPN Root Cause + App Store Submission
-
-**Goal:** Investigate and resolve "Sign in to Game Center" issue on device. Verify all GC features. Document findings, reset leaderboard scores, and submit v2.1.0 for App Store review.
-
-#### Investigation & Root Cause:
-
-1. **Initial investigation** (5 parallel agents): Analyzed auth state, GKAccessPoint, leaderboard ID matching, ASC version enablement, score submission flow. All IDs matched. GKAccessPoint bubble showed (confirming auth works). ASC resources in "Ready to Submit" state.
-
-2. **Diagnostic build**: Added `[GC-DIAG]` logging throughout — auth handler, leaderboard probe (`GKLeaderboard.loadLeaderboards`), default leaderboard identifier, 3 dashboard buttons (generic, classic, galaxy_rank).
-
-3. **ROOT CAUSE: VPN blocking GC network traffic**. Console showed `interface: utun4` (VPN tunnel) in network errors. Auth succeeded (cached) but all data fetching failed with "hostname could not be found."
-
-4. **User disabled VPN → everything works**: All 12 leaderboards visible, scores submitted (Moon 3,323 pts, Galaxy Rank 12,323 pts, rank #1), 10 achievements visible, GKAccessPoint showing.
-
-#### Changes Made:
-
-1. **Diagnostic code removed** (`GameCenterManager.swift`, `LeaderboardView.swift`): All `[GC-DIAG]` logging and diagnostic buttons removed. Code restored to clean state.
-
-2. **Defensive guard added** (`LeaderboardView.swift`): `openGameCenterDashboard()` now checks `GKLocalPlayer.local.isAuthenticated` before presenting GKGameCenterViewController.
-
-3. **Setup script enhanced** (`Scripts/setup_game_center.py`): Added `gameCenterAppVersions` support — `get_current_app_store_version()` and `enable_gc_for_app_version()` functions. Needed for App Store submission (not TestFlight).
-
-4. **v2.1.0 release notes prepared** (`RELEASE_NOTES.md`): App Store "What's New" copy and review team notes for v2.1.0.
-
-#### Files Modified:
-- `RocketLander/Views/LeaderboardView.swift` — defensive auth guard on dashboard
-- `Scripts/setup_game_center.py` — gameCenterAppVersions support
-- All 7 documentation files updated
-
-#### Build Status:
-- Build succeeds, 91/91 tests pass
-
-5. **Leaderboard scores reset**: Ran `setup_game_center.py --reset` to delete all 12 leaderboards and recreate them fresh, clearing test scores (12,323 pts galaxy_rank) before App Store submission.
-
-6. **App Store screenshot**: Created captioned screenshot `Screenshots/v2.1.0/11_galaxy_rank_captioned.png` (1284x2778) with caption "COMPETE GLOBALLY. CLIMB THE GALAXY RANK."
-
-7. **v2.1.0 submitted for App Store review**: Build 32 submitted with comprehensive What's New (covering v2.1.0 + v2.0.3 + v2.0.2), updated review notes, new screenshot, and updated promotional text.
-
-#### Files Modified:
-- `Scripts/setup_game_center.py` — --reset flag, delete_all_leaderboards(), gameCenterAppVersions support
-- `RocketLander/Views/LeaderboardView.swift` — defensive auth guard on dashboard
-- `RELEASE_NOTES.md` — v2.1.0 What's New and review notes
-- `Screenshots/v2.1.0/11_galaxy_rank_captioned.png` — new App Store screenshot
-- All 7 documentation files updated
-
-#### Definition of Done:
-- [x] Root cause identified (VPN blocks GC network)
-- [x] All diagnostic code removed
-- [x] Defensive auth guard added to dashboard presentation
-- [x] Setup script enhanced with gameCenterAppVersions and --reset
-- [x] GC features verified on device (12 leaderboards, scores, rank, achievements)
-- [x] Leaderboard scores reset before submission
-- [x] App Store screenshot created (Galaxy Rank caption)
-- [x] v2.1.0 release notes finalized (What's New + review notes)
-- [x] v2.1.0 Build 32 submitted for App Store review
-- [x] All 7 documentation files updated
-- [x] Build succeeds
-- [x] Session summary created
-
----
-
-### Session 53 (2026-02-06) - GitHub GC Follow-Up: Fix Stale Tags + Reply to Support
-
-**Goal:** Respond to GitHub Support request for sensitive commit SHAs. Audit and fix all stale references on GitHub blocking garbage collection.
-
-#### Changes Made:
-
-1. **Identified sensitive commit SHAs**: Used `.git/filter-repo/commit-map` to find the two old commits containing sensitive data: `17aebc66...` (introduced) and `4c031548...` (removed). Both fully deleted by filter-repo.
-
-2. **Fixed 6 stale remote tags**: All tags (v1.0.0–v1.1.5) on GitHub still pointed to pre-rewrite SHA `67c5802a...`. Deleted and re-pushed all 6 tags. `git push --force` only updates branches, not tags — this was missed in Session 43.
-
-3. **Full reference audit**: Verified no other stale references exist (no PRs, no extra branches, spam issue #1 has no commit refs, 6 releases reference updated tags).
-
-4. **Prepared and sent reply email** to GitHub Support (Collins) with both SHAs, cleanup details, and request to run GC.
-
-#### No code changes. Tag operations only.
-
-#### Definition of Done:
-- [x] Sensitive commit SHAs identified
-- [x] Stale remote tags fixed (6 tags deleted and re-pushed)
-- [x] Full GitHub reference audit completed
-- [x] Reply email sent to GitHub Support
-- [x] All docs updated
-- [x] Session summary created
-
----
-
-### Session 54 (2026-02-06) - Organic Growth Plan
-
-**Goal:** Save the organic growth plan as a project document and integrate it into session continuity workflow.
-
-#### Changes Made:
-
-1. **Growth plan created** (`Docs/GROWTH_PLAN.md`): Comprehensive organic growth strategy for post-v2.1.0 approval. Covers ASO (top priority), screenshot strategy (5 screenshots, no custom art), event-driven share triggers (new personal best, achievement, Galaxy Rank improvement), Reddit-only social (r/iosgaming, r/IndieGames), and AI division of labor (Claude Code = growth hooks + stability, ChatGPT = ASO copy + drafts, Human = builds + approvals). Weekly challenges deferred until ~200+ DAU.
-
-2. **CLAUDE.md updated**: Added `Docs/GROWTH_PLAN.md` to Session Continuity table, Quick Obligations table, and File Structure section. Future sessions will know to consult it when implementing growth-related features.
-
-3. **README.md updated**: Added `Docs/GROWTH_PLAN.md` to project structure tree.
-
-4. **STATUS.md updated**: Added growth plan to Current Phase description and Immediate Next Tasks (share triggers + screenshots as post-approval tasks).
-
-#### Files Created:
-- `Docs/GROWTH_PLAN.md`
-
-#### Files Modified:
-- `CLAUDE.md` — Session Continuity table, Quick Obligations, File Structure
-- `README.md` — Project Structure tree
-- `STATUS.md` — Current Phase description, Immediate Next Tasks, reconciliation date
-- `PROJECT_LOG.md` — Session 54 entry
-
-#### No code changes. Documentation only.
-
-#### Key Decisions:
-- Growth plan saved as project documentation (not external-only) for session continuity
-- Canonical promotional text: "A skill-based landing game where precision beats luck. Master thrust, gravity, and control across the solar system."
-- Share triggers are the primary code work item (implement after v2.1.0 approval)
-- Weekly challenges deferred until DAU reaches ~200+
-
-#### Definition of Done:
-- [x] Growth plan saved as `Docs/GROWTH_PLAN.md`
-- [x] CLAUDE.md references growth plan in 3 places
-- [x] README.md project structure updated
-- [x] STATUS.md updated with growth plan tasks
-- [x] PROJECT_LOG.md session entry added
-- [x] Session summary created
-- [x] All 7 documentation files verified
-
----
-
-### Session 55 (2026-02-06) - Share Score Card Redesign: Crash Sharing + Compact Stats
-
-**Goal:** Redesign the Share Score Card per growth plan: add crash card variant, replace 5-row stats dump with compact colored stats row, add App Store link, enable sharing on crashes.
-
-#### Changes Made:
-
-1. **LandingMessages.swift** — Added `shortCrashCause()` static function (~20 lines). Returns compact cause strings: "Tilt (18.4°)", "V.Speed (547 m/s)", "H.Speed (89 m/s)", "Missed Platform", or "Ship Lost". Same priority logic as `diagnosticCrashMessage()`.
-
-2. **ShareScoreCardView.swift** — Complete redesign with two variants via `isLanded` conditional:
-   - **Landing card**: "STARSHIP LANDER" header → score hero (large mono) → stars → mode/level → platform+band badge → divider → compact stats row (V/H/Fuel with green/yellow/red band colors) → App Store footer
-   - **Crash card**: "STARSHIP LANDER" header → crash headline hero (red) → mode/level → CRASH badge (red) → divider → "Cause: ..." diagnostic → App Store footer
-   - Crash card border is red instead of orange
-   - Removed old 5-row stats dump, `tiltDegrees`, `distanceFromCenter` parameters
-   - Added `platform` parameter for band-aware stat coloring
-   - `ShareHelper.shareImage()` now accepts text payload with App Store URL
-   - `ShareHelper.appStoreURL` constant added
-   - Footer legibility improved (semibold + higher opacity)
-
-3. **GameOverView.swift** — Two changes:
-   - Share button now visible on both landing AND crash game-over screens
-   - `shareScoreCard()` rewritten to build either variant, passing crash headline and compact cause
-   - Share text: "I scored X in Starship Lander! <URL>" or "<CRASH HEADLINE> <URL>"
-
-#### Files Modified:
-- `RocketLander/Models/LandingMessages.swift` — `shortCrashCause()` added
-- `RocketLander/Views/ShareScoreCardView.swift` — complete redesign
-- `RocketLander/Views/GameOverView.swift` — crash sharing enabled, data flow updated
-
-#### Build Status:
-- Build succeeds, 91/91 tests pass
-- Tested on iPhone 16 Pro simulator — both landing and crash cards verified
-
-#### Key Decisions:
-- Single `ShareScoreCardView` with `isLanded` conditional (two variants share ~70% layout)
-- Compact stats row: V, H, Fuel only — no tilt or center (poster, not telemetry)
-- Crash diagnostic uses units: "V.Speed (547 m/s)"
-- Stats values colored by band (green/yellow/red) matching HUD design language
-- `hitTerrain` inferred from `crashDiagnosticPrimary` text — avoids GameState model changes
-- App Store URL: https://apps.apple.com/us/app/starship-lander/id6757563869
-
-#### Definition of Done:
-- [x] Crash share card implemented with headline hero + cause diagnostic
-- [x] Landing share card redesigned with compact colored stats
-- [x] Share button enabled on both landing and crash
-- [x] App Store link on card image + URL in share text payload
-- [x] Crash diagnostic values include units (m/s)
-- [x] Stats values colored by speed/fuel band
-- [x] Footer legibility improved
-- [x] Build succeeds, 91/91 tests pass
-- [x] Simulator tested (landing + crash cards)
-- [x] All 7 documentation files verified
-
----
-
-### Session 56 (2026-02-06) - v2.1.1 Build 33 Version Bump + Upload
-
-**Goal:** Bump version to v2.1.1 Build 33 (share card redesign), archive, and upload to App Store Connect. v2.1.0 approved by Apple.
-
-#### Changes Made:
-
-1. **v2.1.0 approved**: Apple approved v2.1.0 Build 32 for distribution (2026-02-06). Game Center + Share Score Card now live on App Store.
-
-2. **Version bump** (`Info.plist`): v2.1.0 Build 32 → v2.1.1 Build 33.
-
-3. **Build 33 archived and uploaded**: Archive succeeded, exported via `ExportOptions.plist` (app-store-connect method), uploaded to App Store Connect. dSYM warnings for GoogleMobileAds/UserMessagingPlatform (harmless, expected).
-
-4. **Documentation updated**: STATUS.md, CHANGELOG.md, RELEASE_NOTES.md, README.md, PROJECT_LOG.md all updated to reflect v2.1.0 approval and v2.1.1 upload.
-
-#### Files Modified:
-- `RocketLander/Info.plist` — v2.1.1 Build 33
-- `STATUS.md` — version status, phase, next tasks
-- `CHANGELOG.md` — v2.1.1 entry, v2.1.0 marked published
-- `RELEASE_NOTES.md` — v2.1.1 section, v2.1.0 marked published
-- `README.md` — version, history table
-- `PROJECT_LOG.md` — current status table, session entry
-
-#### Build Status:
-- Build succeeds, 91/91 tests pass
-- Archive succeeded
-- Upload succeeded (App Store Connect processing)
-
-#### Commits:
-- `2c43aac` — Bump to v2.1.1 Build 33: share card redesign
-
-#### Definition of Done:
-- [x] v2.1.0 approval noted in all docs
-- [x] Version bumped to v2.1.1 Build 33
-- [x] Build 33 archived and uploaded to App Store Connect
-- [x] All documentation updated (7-file sweep)
-- [x] Session summary created
-
----
-
-### Session 57 (2026-02-06) - Game Center Achievement Images + ASC Upload
-
-**Goal:** Diagnose why Game Center is not working on live v2.1.0, create achievement icons, upload images to ASC.
-
-#### Root Cause Analysis:
-Game Center resources were created via API but never included in an App Store version submission. TestFlight can access "Ready to Submit" resources, but App Store builds cannot. Additionally, achievements were missing required images for their localizations.
-
-#### Changes Made:
-
-1. **Achievement icon generation script** (`Scripts/generate_achievement_icons.py` — NEW): Generates 10 1024x1024 PNG achievement icons using Python Pillow. Badge/emblem style with metallic ring, colored gradients, geometric symbols. Two design iterations (contrast fixes, Solar System Elite redesign with 3 stars + "30").
-
-2. **Achievement images** (`Screenshots/achievements/` — NEW, 10 files): eagle_has_landed, precision_landing, elite_landing, fuel_master, precision_pilot, triple_elite, planet_conquered, first_try_perfection, solar_system_elite, master_lander.
-
-3. **Setup script enhanced** (`Scripts/setup_game_center.py`):
-   - Added `--upload-images` flag with `get_achievement_localizations()` and `upload_achievement_image()` (3-step ASC API: reserve, upload binary, commit)
-   - PEM key reformatting for single-line keys (extract base64, re-wrap at 64 chars)
-   - 401 error handling with diagnostic output
-   - All 10/10 images uploaded successfully
-
-#### Files Created:
-- `Scripts/generate_achievement_icons.py`
-- `Screenshots/achievements/*.png` (10 files)
-
-#### Files Modified:
-- `Scripts/setup_game_center.py` — image upload, PEM fix, 401 handling
-
-#### Build Status:
-- No app code changes — script and asset changes only
-
-#### Key Decisions:
-- Programmatic icon generation (Python Pillow) over design tools for reproducibility
-- API upload over manual for efficiency (10 images)
-
-#### Additional Work (after context restore):
-
-5. **GC release resources created** (`Scripts/setup_game_center.py`):
-   - Added `--create-releases` flag with `create_leaderboard_release()` and `create_achievement_release()`
-   - Root cause: setup script was missing the "release" step — without releases, resources can't be submitted
-   - 12/12 leaderboard releases + 10/10 achievement releases created
-   - Learned: deleting a draft submission in ASC also deletes all releases — must re-create after deletion
-   - `get_existing_achievements()` changed from set to dict (vendorIdentifier -> resource ID)
-
-6. **App Store copy updated**:
-   - Description: added COMPETE GLOBALLY section, corrected max score 20,000→23,100
-   - What's New: v2.1.1 share card + GC fix, v2.1.0 GC, v2.0.3 gameplay, v2.0.2 campaign
-   - Review notes verified
-
-#### Definition of Done:
-- [x] Root cause analysis complete (4 root causes)
-- [x] 10 achievement icons generated
-- [x] 10/10 images uploaded to ASC via API
-- [x] 12/12 leaderboard releases created
-- [x] 10/10 achievement releases created
-- [x] All 22 GC resources visible on v2.1.1 version page
-- [x] App Store description updated
-- [x] What's New updated
-- [x] All documentation updated
-- [x] Session summary created
-- [ ] Submit v2.1.1 for App Store review (pending user action in ASC)
 
 ---
 
@@ -1060,3 +637,27 @@ Game Center resources were created via API but never included in an App Store ve
 ---
 
 *Last updated: 2026-05-03 (Session 68)*
+
+---
+
+### Session 69 (2026-11-10) - v2.3.0 "Mission Control" Engagement Update
+
+**Goal:** Thiago gave full authority to improve every aspect of the game (design, graphics, code, fun, retention) and ship to TestFlight, plus improve the analytics dashboard.
+
+#### Changes Made:
+1. **Pilot Rank** — `Models/PilotProgress.swift`, `Views/ProgressionViews.swift`; XP per flight, 10 ranks, streaks, Blue Star promotion rewards; menu card + game-over XP panel.
+2. **Hangar** — `Models/ShipSkin.swift`, `Views/HangarView.swift`, `StarshipArt.swift`; 7 paint schemes, Blue Star spending (`BlueStarManager.spend/award`).
+3. **Landing camera, guidance, dust, gust callout** — `GameScene+Juice.swift`.
+4. **Visual overhaul** — skies, ridge, starfield sprites, shooting stars, particle plume/explosion/touchdown (`GameScene+Setup.swift`, `GameScene+Effects.swift`).
+5. **Feel fixes** — RCS hold, frame-rate independent controls, solid terrain, legs in collision box (`GameScene.swift`).
+6. **Settings fix** — Sound/Haptics toggles honored (`GameScene+Sound.swift`, `HapticManager.swift`, `GameState.swift`).
+7. **UX** — pre-flight hint + rookie tips, delayed/scrollable results, remembered pilot name, compact menu, How To Play sections (Flight Aids, Pilot Rank & Hangar).
+8. **CI/Release** — `claude/**` CI trigger, `Scripts/ci_screenshots.sh` + DEBUG launch args/autopilot, `.github/workflows/testflight.yml`, `Scripts/release_testflight.sh`.
+9. Version 2.3.0 (Build 39). Removed `Views/ShapeViews.swift`.
+
+#### Key Decisions:
+- See DECISIONS.md entries dated 2026-11-10 (retention loop, flight feel, release automation).
+
+#### Risks / Follow-ups:
+- Not device-tested yet (CI simulator only). TestFlight upload blocked on credentials (no Mac reachable from session; secrets must be added by Thiago).
+

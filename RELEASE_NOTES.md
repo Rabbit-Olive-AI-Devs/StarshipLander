@@ -1,5 +1,32 @@
 # Release Notes
 
+## Version 2.3.0 (Build 39) — "Mission Control"
+**Status:** Release candidate for TestFlight. CI build + full test suite green on GitHub Actions; simulator screenshots verified.
+
+### Overview
+The biggest update since Campaign: a reason to come back every day (Pilot Rank + Hangar), a landing that feels cinematic, flight aids that make the game learnable, and a visual overhaul of every world. Also fixes the Sound/Haptics toggles and a frame-rate bug that could make the engine feel weak.
+
+### App Store — What's New (Copy this)
+```
+MISSION CONTROL UPDATE
+
+• Pilot Rank: earn XP on every flight and climb 10 ranks from Cadet to Starship Legend
+• Hangar: spend Blue Stars on 7 Starship paint schemes, each with its own engine glow
+• Cinematic landings: the camera zooms in on final approach, with dust, sparks and bigger explosions
+• Flight guidance: a guide line turns green when you're lined up with the pad, plus a live descent readout by your ship
+• Every world redesigned with its own sky, horizon glow and atmosphere
+• Fixes: Sound and Haptics settings now work, smoother thrust on every device
+```
+
+### App Store — Review Team Notes (Copy this)
+```
+Starship Lander is a skill-based physics rocket landing game. No account, login or in-app purchase is required.
+
+New in 2.3.0: Pilot Rank (XP earned in-game) and a Hangar of cosmetic ship paint schemes bought with Blue Stars, an in-game currency earned only by playing (no real-money purchase exists). No new SDKs, no new data collection; ads unchanged from 2.2.x (banner + interstitial every 7th retry, text/image only).
+```
+
+---
+
 ## Version 2.2.1 (Build 38)
 **Status:** Submitted for App Store review. App Store Connect state `WAITING_FOR_REVIEW` at `2026-05-04T01:20:53Z`.
 

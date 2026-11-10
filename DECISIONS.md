@@ -566,3 +566,27 @@ This file records key technical and design decisions, including context, alterna
 **Decision:** Option 2 — three tilt bands: SAFE ≤0.05 rad (~2.9°), HARD ≤0.10 rad (~5.7°), FAIL >0.10 rad. Tilt band participates in overall landing band calculation (worst of V/H/tilt wins). Rotation scoring uses hardTilt (0.10) as denominator for smooth curve.
 **Why:** Consistency with speed bands. Players now get partial credit for "good enough" tilt instead of binary crash. Doubles the survivable tilt range. The HARD tilt feedback (yellow HUD, reduced score) still signals "you should do better" without instant death.
 **Consequences:** Survivable tilt range doubled (2.9° → 5.7°). Rotation scoring denominator widened (0.05 → 0.10), giving more partial credit. Best achievable score increased slightly (Classic C: 14,331 → 14,504) because rotation scoring is more generous at small angles. 91 tests pass (was 89 — net +2 from splitting 2 binary rotation tests into 4 tilt band tests + 1 classification test, minus 2 old tests). HUD tilt color now shows green/yellow/red for safe/hard/fail. Crash message updated: "Land under 6°" (was 3°). HowToPlayView updated with tilt band explanation.
+
+---
+
+## [2026-11-10] v2.3.0 — Pilot Rank XP + Hangar as the retention loop
+**Context:** Blue Stars were earn-only (backlog: "Blue star spending mechanism"), and nothing rewarded a player for an ordinary flight, so there was little reason to return outside the Daily Challenge.
+**Options considered:** (1) IAP skins; (2) Missions/contracts system; (3) Per-flight XP with ranks + cosmetic skins bought with Blue Stars or unlocked by rank.
+**Decision:** Option 3. XP per flight (crash 5, landing 25 + pad/clean/streak/daily bonuses), 10 ranks to 7,500 XP, 5 Blue Stars per promotion. 7 purely cosmetic skins (10–150 Blue Stars; Night Ops/Red Planet/Lunar Gold/Legend also unlock free at ranks 3/5/7/10).
+**Why:** Gives every flight visible progress and gives the existing currency a sink without touching scoring, leaderboards or monetization.
+**Consequences:** No physics or score changes from skins. Progress is local (UserDefaults `pilotProgress.v1`, `hangarOwnedSkins`, `hangarSelectedSkin`); no new data leaves the device and no privacy declaration changes.
+
+---
+
+## [2026-11-10] v2.3.0 — Flight feel: RCS hold, frame-rate independence, solid terrain, legs on the collision box
+**Context:** Device feedback themes: spin overshoot with buttons, ships passing through hills, and feet floating above/clipping the pad. CI simulator runs also showed ships falling through on heavy-gravity worlds when the frame rate dropped.
+**Decision:** (a) Angular damping 2.6 while no rotation input is held (0.7 while rotating; requires fuel). (b) Thrust, rotation and fuel burn scale by `min(dt, 0.05) × 60` so the tuned 60 fps values are exact at 60 fps and correct under frame drops. (c) Terrain edge-chain physics on every world (was Ganymede only). (d) Rocket body 54×96.25 pts centered at y −6.1 so it spans the nose to the bottom of the feet.
+**Why:** Fixes root causes rather than tuning numbers; landing thresholds, scoring and per-level thrust/gravity are unchanged.
+**Consequences:** Missing a pad now crashes on the visible hillside instead of a hidden floor. Contact with the pad happens when the feet touch (≈11 pts earlier than before), which the existing pre-contact velocity tracking already handles.
+
+---
+
+## [2026-11-10] v2.3.0 — Release automation without handling credentials
+**Context:** No Mac was reachable in this session; uploads previously required Xcode Organizer on Thiago's Mac.
+**Decision:** Add `.github/workflows/testflight.yml` (archive + upload with App Store Connect API key stored only as GitHub encrypted secrets `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`, triggered by `testflight/*` tags) and `Scripts/release_testflight.sh` (uses the Xcode-signed-in account on a Mac). Neither reads or stores keys in the repo or session.
+**Consequences:** Credentials must be added by Thiago once (GitHub Settings → Secrets). The API key needs the Admin role for cloud-managed distribution signing.
