@@ -1,0 +1,91 @@
+name: TestFlight Release
+
+# Archives the app and uploads it to App Store Connect / TestFlight.
+# Trigger: push a tag named testflight/<anything> (e.g. testflight/v2.3.0-b39)
+# or run manually from the Actions tab.
+#
+# One-time setup (repository Settings > Secrets and variables > Actions):
+#   ASC_KEY_ID     App Store Connect API key ID (key role: Admin, for cloud-managed signing)
+#   ASC_ISSUER_ID  App Store Connect issuer ID
+#   ASC_KEY_P8     Full contents of the AuthKey_XXXX.p8 file
+# The key never leaves GitHub's encrypted secrets store.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "testflight/**"
+
+jobs:
+  upload:
+    name: Archive and upload
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify App Store Connect credentials are configured
+        run: |
+          missing=0
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret $name is not set. See the header of .github/workflows/testflight.yml."
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - name: Install API key
+        run: |
+          KEY_DIR="$RUNNER_TEMP/asc"
+          mkdir -p "$KEY_DIR"
+          printf '%s\n' "$ASC_KEY_P8" > "$KEY_DIR/AuthKey.p8"
+          echo "ASC_KEY_PATH=$KEY_DIR/AuthKey.p8" >> "$GITHUB_ENV"
+
+      - name: Archive
+        run: |
+          xcodebuild archive \
+            -project RocketLander.xcodeproj -scheme RocketLander -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/RocketLander.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM=6XK6BNVURL | tail -20
+
+      - name: Export and upload to App Store Connect
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>6XK6BNVURL</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/RocketLander.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          echo "Uploaded $(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' RocketLander/Info.plist) ($(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' RocketLander/Info.plist)) to App Store Connect."
+
+      - name: Remove API key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/asc"

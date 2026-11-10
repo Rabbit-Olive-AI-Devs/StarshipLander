@@ -60,7 +60,7 @@ shoot 00_warmup 12 -screen menu
 shoot 01_menu 5 -screen menu
 shoot 02_hangar 5 -screen hangar
 shoot 03_preflight_mars 5 -screen game -mode campaign -level 2
-shoot_sequence 04_classic_autopilot "4 8 11 14 18" -screen game -mode classic -autopilot
+shoot_sequence 04_classic_autopilot "6 10 14 18" -screen game -mode classic -autopilot
 shoot_sequence 05_europa_autopilot "5 9 13" -screen game -mode campaign -level 4 -autopilot
 shoot_sequence 06_jupiter_autopilot "4 8" -screen game -mode campaign -level 10 -autopilot
 shoot 07_venus 5 -screen game -mode campaign -level 6

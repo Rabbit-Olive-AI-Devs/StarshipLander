@@ -344,6 +344,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let dt = lastUpdateTime > 0 ? currentTime - lastUpdateTime : 0
         lastUpdateTime = currentTime
         frameCounter += 1
+        // Control inputs are tuned per 60 fps frame; scale by real elapsed time so
+        // thrust, rotation and fuel burn stay identical when frames drop.
+        let frameScale = CGFloat(min(dt, 0.05) * 60)
 
         if gameStartTime > 0 {
             gameState.elapsedTime = currentTime - gameStartTime
@@ -381,6 +384,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             } else {
                 thrustPower = 12.0
             }
+            thrustPower *= frameScale
             let angle = rocket.zRotation + .pi / 2
             velocity.dx += cos(angle) * thrustPower
             velocity.dy += sin(angle) * thrustPower
@@ -395,7 +399,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             HapticManager.shared.thrustPulse()
 
             DispatchQueue.main.async {
-                self.gameState.fuel = max(0, self.gameState.fuel - 0.27)
+                self.gameState.fuel = max(0, self.gameState.fuel - 0.27 * Double(frameScale))
             }
         } else {
             stopThrustSound()
@@ -405,7 +409,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Rotation
         var hasRotationInput = false
         if gameState.fuel > 0 {
-            let rotationPower: CGFloat = 0.04
+            let rotationPower: CGFloat = 0.04 * frameScale
 
             if gameState.useAccelerometer {
                 let deadZone: CGFloat = 0.1
@@ -414,9 +418,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 if abs(accelerometerTilt) > deadZone {
                     hasRotationInput = true
                     let tiltAmount = accelerometerTilt - (accelerometerTilt > 0 ? deadZone : -deadZone)
-                    rocket.physicsBody?.angularVelocity += tiltAmount * sensitivity
+                    rocket.physicsBody?.angularVelocity += tiltAmount * sensitivity * frameScale
 
-                    let fuelConsumption = abs(tiltAmount) * 0.035
+                    let fuelConsumption = Double(abs(tiltAmount) * 0.035 * frameScale)
                     DispatchQueue.main.async {
                         self.gameState.fuel = max(0, self.gameState.fuel - fuelConsumption)
                     }
@@ -430,7 +434,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     }
                     rocket.physicsBody?.angularVelocity += rotationPower
                     DispatchQueue.main.async {
-                        self.gameState.fuel = max(0, self.gameState.fuel - 0.07)
+                        self.gameState.fuel = max(0, self.gameState.fuel - 0.07 * Double(frameScale))
                     }
                 }
 
@@ -442,7 +446,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     }
                     rocket.physicsBody?.angularVelocity -= rotationPower
                     DispatchQueue.main.async {
-                        self.gameState.fuel = max(0, self.gameState.fuel - 0.07)
+                        self.gameState.fuel = max(0, self.gameState.fuel - 0.07 * Double(frameScale))
                     }
                 }
             }
@@ -455,7 +459,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         wasRotatingLeft = gameState.isRotatingLeft
         wasRotatingRight = gameState.isRotatingRight
 
-        applyCampaignMechanics(dt: dt, currentTime: currentTime)
+        applyCampaignMechanics(dt: dt, currentTime: currentTime, frameScale: frameScale)
 
         // Track velocity (post-thrust, post-rotation, post-mechanics — authoritative snapshot)
         if let velocity = rocket.physicsBody?.velocity {
@@ -499,7 +503,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     // MARK: - Campaign Mechanics
 
-    private func applyCampaignMechanics(dt: TimeInterval, currentTime: TimeInterval) {
+    private func applyCampaignMechanics(dt: TimeInterval, currentTime: TimeInterval, frameScale: CGFloat) {
         guard gameState.currentMode.usesLevelDefinition,
               let level = LevelDefinition.level(for: gameState.currentLevelId) else { return }
 
@@ -537,9 +541,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         case .heatShimmer:
             // Mercury: heat interference — random perturbation when thrusting
             if gameState.isThrusting && gameState.fuel > 0 {
-                rocket.physicsBody?.velocity.dx += CGFloat.random(in: -3.5...3.5)
-                rocket.physicsBody?.velocity.dy += CGFloat.random(in: -2.0...2.0)
-                rocket.physicsBody?.angularVelocity += CGFloat.random(in: -0.02...0.02)
+                rocket.physicsBody?.velocity.dx += CGFloat.random(in: -3.5...3.5) * frameScale
+                rocket.physicsBody?.velocity.dy += CGFloat.random(in: -2.0...2.0) * frameScale
+                rocket.physicsBody?.angularVelocity += CGFloat.random(in: -0.02...0.02) * frameScale
             }
 
         case .cryogeysers:

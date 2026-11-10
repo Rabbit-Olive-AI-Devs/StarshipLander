@@ -24,13 +24,13 @@ struct GameContainerView: View {
                     TopHUDView(gameState: gameState, showingGame: $showingGame)
                 }
 
-                Spacer()
-
                 if !gameState.gameOver && !gameState.flightStarted {
                     PreflightHintView(useAccelerometer: gameState.useAccelerometer)
-                        .padding(.bottom, 8)
+                        .padding(.top, 4)
                         .transition(.opacity)
                 }
+
+                Spacer()
 
                 if !gameState.gameOver {
                     BottomControlsView(gameState: gameState)
