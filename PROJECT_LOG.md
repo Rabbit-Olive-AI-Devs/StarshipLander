@@ -35,10 +35,10 @@ This file documents the development history and decisions for the Starship Lande
 | 2.2.0 | 37 | **PUBLISHED / LIVE** — Approved and distributed by Apple on 2026-05-03. Live campaign startup crash reported; local hotfix pending Xcode verification/replacement build. |
 | 2.2.1 | 38 | **SUBMITTED FOR REVIEW** — Campaign startup crash hotfix; uploaded, metadata updated, Build 38 attached, review submission waiting. |
 | 3.0.0 | 40 | **CODE COMPLETE, CI GREEN** — "Starship Program": Chapter 2 (5 missions), atmospheric drag, ghost replay, folding legs, realistic rendering. Stacked on 2.3.0. |
-| 2.3.0 | 39 | **CODE COMPLETE, CI GREEN** — "Mission Control": Pilot Rank, Hangar, landing camera, flight guidance, RCS hold, visual overhaul, settings + frame-rate fixes. TestFlight upload pending credentials (see STATUS.md). |
+| 2.3.0 | 39 | **UPLOADED TO APP STORE CONNECT** (2026-11-10) — "Mission Control": Pilot Rank, Hangar, landing camera, flight guidance, RCS hold, visual overhaul, settings + frame-rate fixes. Processing/TestFlight not yet confirmed. |
 
 **NEXT STEPS:**
-0. v2.3.0: configure TestFlight secrets (or run `Scripts/release_testflight.sh` on the Mac), push tag `testflight/v2.3.0-b39`, device-test, merge PR, submit.
+0. v2.3.0 Build 39 uploaded (2026-11-10). Confirm TestFlight processing, device-test, merge PR #4, submit.
 1. Monitor v2.2.1 Build 38 App Store review status.
 2. Verify replacement build on device/App Store/TestFlight after approval/distribution.
 3. Confirm Campaign startup on Earth, Venus, and an early unlocked planet in the replacement build.
@@ -663,6 +663,11 @@ This file documents the development history and decisions for the Starship Lande
 
 #### Risks / Follow-ups:
 - Not device-tested yet (CI simulator only). TestFlight upload blocked on credentials (no Mac reachable from session; secrets must be added by Thiago).
+
+#### Session 69 addendum (2026-11-10) — Build 39 upload
+- Jarvis ran `Scripts/release_testflight.sh` on the home Mac at commit `3f72dee`. First attempt stopped at archive (exit 65: Developer Program License Agreement update required, then missing provisioning profile). After Thiago accepted the agreement, the second attempt succeeded 13:56–14:00 CT: ARCHIVE SUCCEEDED, Upload succeeded, EXPORT SUCCEEDED; archived metadata 2.3.0 (39); Xcode 26.6 (17F113).
+- Warnings: missing dSYMs for GoogleMobileAds and UserMessagingPlatform (upload unaffected).
+- Not verified: Apple processing, TestFlight visibility, device gameplay.
 
 ---
 
