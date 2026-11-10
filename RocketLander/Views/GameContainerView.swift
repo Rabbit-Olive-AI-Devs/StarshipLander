@@ -152,6 +152,12 @@ struct GameSceneView: UIViewRepresentable {
         let view = SKView()
         view.ignoresSiblingOrder = true
         view.allowsTransparency = true
+        #if DEBUG
+        if DebugLaunch.isScripted {
+            view.showsFPS = true
+            view.showsNodeCount = true
+        }
+        #endif
 
         let scene = GameScene(gameState: gameState, campaignState: campaignState)
         scene.scaleMode = .resizeFill
