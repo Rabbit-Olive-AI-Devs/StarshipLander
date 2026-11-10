@@ -16,6 +16,9 @@ struct RocketLanderApp: App {
     }
 
     private func requestTrackingPermission() {
+        #if DEBUG
+        if DebugLaunch.isScripted { return }
+        #endif
         guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             ATTrackingManager.requestTrackingAuthorization { status in
@@ -34,3 +37,20 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 }
+
+#if DEBUG
+// MARK: - Debug Launch Arguments
+// Used by Scripts/ci_screenshots.sh to open a screen directly and fly hands-free.
+//   -screen menu|hangar|game   -mode classic|campaign|daily   -level N   -autopilot
+enum DebugLaunch {
+    private static let args = ProcessInfo.processInfo.arguments
+
+    static func value(_ key: String) -> String? {
+        guard let i = args.firstIndex(of: key), i + 1 < args.count else { return nil }
+        return args[i + 1]
+    }
+
+    static var isScripted: Bool { value("-screen") != nil }
+    static var autopilot: Bool { args.contains("-autopilot") }
+}
+#endif

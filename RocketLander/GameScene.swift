@@ -14,12 +14,28 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var gameState: GameState
     var campaignState: CampaignState
     var rocket: SKNode!
-    var flame: SKEmitterNode?
     var platforms: [SKShapeNode] = []
     var ground: SKShapeNode!
     var terrain: SKShapeNode!
     var hasStarted = false
     var lastUpdateTime: TimeInterval = 0
+
+    // Ship visuals
+    var shipSkin: ShipSkin = .stainless
+    var enginePlume: SKEmitterNode?
+    var engineGlow: SKSpriteNode?
+    var isEngineLit = false
+
+    // Camera + flight guidance
+    var cameraNode: SKCameraNode?
+    var guidanceLine: SKSpriteNode?
+    var guidanceLabel: SKLabelNode?
+    var dustEmitter: SKEmitterNode?
+    var frameCounter = 0
+
+    // Terrain surface samples (for altitude, dust and guidance)
+    var terrainHeights: [CGFloat] = []
+    let terrainSegmentWidth: CGFloat = 20
 
     // Sound nodes
     var thrustSound: SKAudioNode?
@@ -71,6 +87,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let platformCategory: UInt32 = 0x1 << 1
     let groundCategory: UInt32 = 0x1 << 2
 
+    // RCS attitude hold: extra angular damping while no rotation input is held.
+    static let freeAngularDamping: CGFloat = 0.7
+    static let rcsHoldAngularDamping: CGFloat = 2.6
 
     // MARK: - Init
 
@@ -90,7 +109,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     override func didMove(to view: SKView) {
         backgroundColor = .clear
 
-        // Set gravity based on mode
         let gravity: CGFloat
         if gameState.currentMode.usesLevelDefinition,
            let level = LevelDefinition.level(for: gameState.currentLevelId) {
@@ -107,6 +125,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     override func willMove(from view: SKView) {
         motionManager.stopAccelerometerUpdates()
+        stopThrustSound()
     }
 
     private func setupAccelerometer() {
@@ -136,15 +155,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         guard size.width > 0 && size.height > 0 else { return }
 
         GameCenterManager.shared.clearLastLeaderboardRank()
+        shipSkin = HangarManager.shared.selectedSkin
+        setupCamera()
+        createSky()
         createStarfield()
         createCelestialBody()
+        createDistantRidge()
         createTerrain()
         createGround()
         createPlatforms()
         platformOriginalPositions = platforms.map { $0.position }
         createRocket()
+        createFlightGuidance()
 
         hasStarted = false
+        frameCounter = 0
         gameState.gameOver = false
         gameState.landed = false
         gameState.shouldReset = false
@@ -156,6 +181,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         gameState.landedPlatform = nil
         gameState.landingMessage = ""
         gameState.starsEarned = 0
+        gameState.flightStarted = false
+        gameState.flightReward = nil
 
         maxDescentSpeed = 0
         recentVelocities = []
@@ -174,18 +201,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         wasRotatingLeft = false
         wasRotatingRight = false
 
-        // Set gravity for level-based modes
         if gameState.currentMode.usesLevelDefinition,
            let level = LevelDefinition.level(for: gameState.currentLevelId) {
             physicsWorld.gravity = CGVector(dx: 0, dy: level.gravity)
-
-            // Start level-specific effects (full hazards for daily challenge)
             startLevelEffects(level)
         } else {
             physicsWorld.gravity = CGVector(dx: 0, dy: -2.0)
         }
 
-        // Highlight target platform for daily challenge
         if gameState.currentMode == .dailyChallenge,
            let target = gameState.dailyChallengeTargetPlatform {
             highlightTargetPlatform(target)
@@ -195,12 +218,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // MARK: - Daily Challenge Target Highlight
 
     private func highlightTargetPlatform(_ target: LandingPlatform) {
-        // Find the platform node matching the target
         guard let platformIndex = LandingPlatform.allCases.firstIndex(of: target),
               platformIndex < platforms.count else { return }
         let platformNode = platforms[platformIndex]
 
-        // Pulsing gold ring around target platform
         let ring = SKShapeNode(rectOf: CGSize(width: target.width + 16, height: 32), cornerRadius: 6)
         ring.strokeColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 0.8)
         ring.fillColor = .clear
@@ -217,7 +238,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         ring.run(SKAction.repeatForever(pulse))
         platformNode.addChild(ring)
 
-        // "TARGET" label above platform
         let label = SKLabelNode(text: "TARGET")
         label.fontSize = 11
         label.fontName = "Orbitron"
@@ -234,13 +254,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         platformNode.addChild(label)
     }
 
-    func startGame() {
-        guard rocket != nil else { return }
-        if !hasStarted {
-            hasStarted = true
-            rocket.physicsBody?.isDynamic = true
-            applyCampaignReentryState()
-            GameCenterManager.shared.recordAttempt(mode: gameState.currentMode, levelId: gameState.currentLevelId)
+    private func beginFlight(at currentTime: TimeInterval) {
+        hasStarted = true
+        gameStartTime = currentTime
+        rocket.physicsBody?.isDynamic = true
+        applyCampaignReentryState()
+        GameCenterManager.shared.recordAttempt(mode: gameState.currentMode, levelId: gameState.currentLevelId)
+        DispatchQueue.main.async {
+            self.gameState.flightStarted = true
         }
     }
 
@@ -261,10 +282,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             windForce = CGFloat.random(in: -1.5...1.5)
             createWindParticles(intensity: .light)
         case .heavyTurbulence:
-            windForce = 0  // Will oscillate in update
+            windForce = 0
             createWindParticles(intensity: .heavy)
         case .extremeWind:
-            windForce = 0  // Will oscillate in update
+            windForce = 0
             createWindParticles(intensity: .extreme)
         case .heatShimmer:
             createHeatShimmer()
@@ -272,7 +293,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             createVolcanicEruption()
         case .denseAtmosphere:
             // Titan: dense atmosphere reduces thrust efficiency (handled in update loop)
-            // No linearDamping — that makes landing easier, which is wrong
             createAtmosphereHaze()
         case .cryogeysers:
             rocket.physicsBody?.friction = 0.01
@@ -287,24 +307,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // MARK: - Cryogeyser Setup (Europa)
 
     private func setupCryogeysers() {
-        // 3 geyser positions in gaps between platforms (~8%, ~34%, ~66% of screen width)
         let fractions: [CGFloat] = [0.08, 0.34, 0.66]
         geyserPositions = fractions.map { $0 * size.width }
         geyserActive = [false, false, false]
-        // Stagger initial timers so they don't all fire at once
         geyserTimers = [0.0, 1.5, 3.0]
-        geyserActiveDurations = [
-            Double.random(in: 2.0...3.0),
-            Double.random(in: 2.0...3.0),
-            Double.random(in: 2.0...3.0)
-        ]
-        geyserCalmDurations = [
-            Double.random(in: 3.0...5.0),
-            Double.random(in: 3.0...5.0),
-            Double.random(in: 3.0...5.0)
-        ]
+        geyserActiveDurations = (0..<3).map { _ in Double.random(in: 2.0...3.0) }
+        geyserCalmDurations = (0..<3).map { _ in Double.random(in: 3.0...5.0) }
 
-        // Add subtle vent markers at each geyser position
         for x in geyserPositions {
             let vent = SKShapeNode(ellipseOf: CGSize(width: 12, height: 4))
             vent.fillColor = SKColor(red: 0.5, green: 0.7, blue: 0.9, alpha: 0.6)
@@ -321,21 +330,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     override func update(_ currentTime: TimeInterval) {
         guard !gameState.gameOver, rocket != nil else { return }
 
-        // Auto-start
+        #if DEBUG
+        if DebugLaunch.autopilot { runAutopilot() }
+        #endif
+
+        // Auto-start on first input
         if !hasStarted && (gameState.isThrusting || gameState.isRotatingLeft || gameState.isRotatingRight) {
-            hasStarted = true
-            gameStartTime = currentTime
-            rocket.physicsBody?.isDynamic = true
-            applyCampaignReentryState()
-            GameCenterManager.shared.recordAttempt(mode: gameState.currentMode, levelId: gameState.currentLevelId)
+            beginFlight(at: currentTime)
         }
 
         guard hasStarted else { return }
 
         let dt = lastUpdateTime > 0 ? currentTime - lastUpdateTime : 0
         lastUpdateTime = currentTime
+        frameCounter += 1
 
-        // Update elapsed time for live timer display (used by timed daily challenges)
         if gameStartTime > 0 {
             gameState.elapsedTime = currentTime - gameStartTime
         }
@@ -344,33 +353,27 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if gameState.shouldReset {
             gameState.shouldReset = false
             removeAllChildren()
-            removeAction(forKey: "heatShimmer")
-            removeAction(forKey: "heatParticles")
-            removeAction(forKey: "volcanicEruption")
-            removeAction(forKey: "windParticles")
-            removeAction(forKey: "atmosphereHaze")
-            removeAction(forKey: "iceShimmer")
-            removeAction(forKey: "cryogeysers")
+            removeAllActions()
             geyserPositions = []
             geyserActive = []
             geyserTimers = []
             geyserActiveDurations = []
             geyserCalmDurations = []
             lastUpdateTime = 0
+            gameStartTime = 0
             setupScene()
             return
         }
 
-        // Apply main thrust
-        if gameState.isThrusting && gameState.fuel > 0 {
+        // Main engine
+        let thrusting = gameState.isThrusting && gameState.fuel > 0
+        if thrusting {
             guard var velocity = rocket.physicsBody?.velocity else { return }
 
-            // Per-level thrust in level-based modes, fixed 12.0 in classic
             var thrustPower: CGFloat
             if gameState.currentMode.usesLevelDefinition,
                let level = LevelDefinition.level(for: gameState.currentLevelId) {
                 thrustPower = level.thrustPower
-
                 // Titan (level 3): dense atmosphere reduces thrust efficiency by 25%
                 if level.id == 3 {
                     thrustPower *= 0.75
@@ -379,24 +382,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 thrustPower = 12.0
             }
             let angle = rocket.zRotation + .pi / 2
-            let dx = cos(angle) * thrustPower
-            let dy = sin(angle) * thrustPower
-
-            velocity.dx += dx
-            velocity.dy += dy
+            velocity.dx += cos(angle) * thrustPower
+            velocity.dy += sin(angle) * thrustPower
 
             // Proportional thrust vectoring — lateral force scales with tilt angle
-            // sin(rotation) naturally gives 0 when upright, increases with tilt
-            // 0.15 factor: at 30° tilt, ~7.5% of thrust power goes lateral
             let lateralFactor: CGFloat = 0.15
-            let lateralForce = sin(rocket.zRotation) * thrustPower * lateralFactor
-            velocity.dx += lateralForce
+            velocity.dx += sin(rocket.zRotation) * thrustPower * lateralFactor
 
             rocket.physicsBody?.velocity = velocity
-
-            if flame == nil && rocket.children.filter({ $0.position.y == -42 }).isEmpty {
-                createMainFlame()
-            }
 
             startThrustSound()
             HapticManager.shared.thrustPulse()
@@ -405,19 +398,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 self.gameState.fuel = max(0, self.gameState.fuel - 0.27)
             }
         } else {
-            removeFlames()
             stopThrustSound()
         }
+        setEngine(on: thrusting)
 
-        // Apply rotation
+        // Rotation
+        var hasRotationInput = false
         if gameState.fuel > 0 {
-            let rotationPower: CGFloat = 0.04  // Increased from 0.025
+            let rotationPower: CGFloat = 0.04
 
             if gameState.useAccelerometer {
                 let deadZone: CGFloat = 0.1
                 let sensitivity: CGFloat = 0.06
 
                 if abs(accelerometerTilt) > deadZone {
+                    hasRotationInput = true
                     let tiltAmount = accelerometerTilt - (accelerometerTilt > 0 ? deadZone : -deadZone)
                     rocket.physicsBody?.angularVelocity += tiltAmount * sensitivity
 
@@ -428,6 +423,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
             } else {
                 if gameState.isRotatingLeft {
+                    hasRotationInput = true
                     if !wasRotatingLeft {
                         playRotateSound()
                         HapticManager.shared.rotationStart()
@@ -439,6 +435,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
 
                 if gameState.isRotatingRight {
+                    hasRotationInput = true
                     if !wasRotatingRight {
                         playRotateSound()
                         HapticManager.shared.rotationStart()
@@ -451,10 +448,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         }
 
+        // RCS attitude hold: damp spin when the pilot lets go of rotation (needs fuel)
+        let holdAttitude = !hasRotationInput && gameState.fuel > 0
+        rocket.physicsBody?.angularDamping = holdAttitude ? GameScene.rcsHoldAngularDamping : GameScene.freeAngularDamping
+
         wasRotatingLeft = gameState.isRotatingLeft
         wasRotatingRight = gameState.isRotatingRight
 
-        // Apply campaign special mechanics
         applyCampaignMechanics(dt: dt, currentTime: currentTime)
 
         // Track velocity (post-thrust, post-rotation, post-mechanics — authoritative snapshot)
@@ -489,7 +489,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             rocket.position.x = -20
         }
 
-        // Check if rocket fell off screen
+        updateFlightGuidance(thrusting: thrusting)
+        updateCamera(dt: dt)
+
         if rocket.position.y < -100 {
             crashRocket()
         }
@@ -503,11 +505,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         switch level.specialMechanic {
         case .lightWind:
-            // Constant light wind
             rocket.physicsBody?.applyForce(CGVector(dx: windForce, dy: 0))
 
         case .heavyTurbulence:
-            // Venus: vertical updrafts/downdrafts instead of horizontal wind
+            // Venus: vertical updrafts/downdrafts
             windTime += dt
             let verticalForce = CGFloat(sin(windTime * 1.5)) * 4.0 + CGFloat.random(in: -0.5...0.5)
             rocket.physicsBody?.applyForce(CGVector(dx: 0, dy: verticalForce))
@@ -516,7 +517,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             // Jupiter: sudden gusts pushing left→right with calm windows
             gustTimer += dt
             if gustActive {
-                // Strong consistent rightward push (positive dx)
                 let gustForce: CGFloat = 20.0 + CGFloat.random(in: -3...3)
                 rocket.physicsBody?.applyForce(CGVector(dx: gustForce, dy: 0))
                 if gustTimer >= gustActiveDuration {
@@ -525,39 +525,32 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     gustCalmDuration = Double.random(in: 2.0...3.5)
                 }
             } else {
-                // Light residual rightward drift during calm
                 rocket.physicsBody?.applyForce(CGVector(dx: CGFloat.random(in: 0.5...2), dy: 0))
                 if gustTimer >= gustCalmDuration {
                     gustActive = true
                     gustTimer = 0
                     gustActiveDuration = Double.random(in: 1.5...2.5)
+                    showHazardWarning("GUST")
                 }
             }
 
         case .heatShimmer:
-            // Mercury: heat interference — stronger random perturbation when thrusting
+            // Mercury: heat interference — random perturbation when thrusting
             if gameState.isThrusting && gameState.fuel > 0 {
-                // Significant thrust disruption — makes control harder
-                let dx = CGFloat.random(in: -3.5...3.5)
-                let dy = CGFloat.random(in: -2.0...2.0)
-                rocket.physicsBody?.velocity.dx += dx
-                rocket.physicsBody?.velocity.dy += dy
-                // Also slight angular perturbation
+                rocket.physicsBody?.velocity.dx += CGFloat.random(in: -3.5...3.5)
+                rocket.physicsBody?.velocity.dy += CGFloat.random(in: -2.0...2.0)
                 rocket.physicsBody?.angularVelocity += CGFloat.random(in: -0.02...0.02)
             }
 
         case .cryogeysers:
-            // Europa: cycle geysers between active/calm, apply upward push when rocket is in plume zone
             for i in 0..<geyserPositions.count {
                 geyserTimers[i] += dt
                 if geyserActive[i] {
-                    // Check if eruption should end
                     if geyserTimers[i] >= geyserActiveDurations[i] {
                         geyserActive[i] = false
                         geyserTimers[i] = 0
                         geyserCalmDurations[i] = Double.random(in: 3.0...5.0)
                     }
-                    // Apply upward force if rocket is in plume zone
                     let gx = geyserPositions[i]
                     let horizontalRange: CGFloat = 30
                     let plumeBottom: CGFloat = 180
@@ -565,33 +558,22 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     if let rocketPos = rocket?.position,
                        abs(rocketPos.x - gx) < horizontalRange,
                        rocketPos.y >= plumeBottom && rocketPos.y <= plumeTop {
-                        // Force tapers with height (stronger near surface)
                         let heightFraction = 1.0 - (rocketPos.y - plumeBottom) / (plumeTop - plumeBottom)
-                        let baseForce: CGFloat = 18.0
-                        let upwardForce = baseForce * heightFraction
+                        let upwardForce = 18.0 * heightFraction
                         let lateralJitter = CGFloat.random(in: -1.5...1.5)
                         rocket.physicsBody?.applyForce(CGVector(dx: lateralJitter, dy: upwardForce))
                     }
-                } else {
-                    // Check if calm period should end
-                    if geyserTimers[i] >= geyserCalmDurations[i] {
-                        geyserActive[i] = true
-                        geyserTimers[i] = 0
-                        geyserActiveDurations[i] = Double.random(in: 2.0...3.0)
-                    }
+                } else if geyserTimers[i] >= geyserCalmDurations[i] {
+                    geyserActive[i] = true
+                    geyserTimers[i] = 0
+                    geyserActiveDurations[i] = Double.random(in: 2.0...3.0)
                 }
             }
 
         case .movingPlatform:
-            // Platform A (left):   slow vertical bob only
-            // Platform B (center): horizontal sway within center zone
-            // Platform C (right):  diagonal movement within right zone
+            // A: vertical bob · B: horizontal sway · C: diagonal
             let speeds: [CGFloat] = [15, 30, 25]
             let vRange: CGFloat = 18
-
-            // Each platform stays within its own zone (no relative clamping)
-            // Zone boundaries based on screen thirds, with gaps
-            let zoneARight = size.width * 0.30
             let zoneBLeft = size.width * 0.35
             let zoneBRight = size.width * 0.65
             let zoneCLeft = size.width * 0.70
@@ -602,13 +584,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 let speed = speeds[min(i, speeds.count - 1)]
 
                 if i == 0 {
-                    // Platform A: gentle vertical bob only
                     plat.position.y += platformDirections[i] * speed * CGFloat(dt)
                     if abs(plat.position.y - origin.y) > vRange {
                         platformDirections[i] *= -1
                     }
                 } else if i == 1 {
-                    // Platform B: horizontal sway within center zone
                     plat.position.x += platformDirections[i] * speed * CGFloat(dt)
                     let halfWidth = LandingPlatform.allCases[1].width / 2
                     let minX = zoneBLeft + halfWidth
@@ -618,7 +598,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                         plat.position.x = max(minX, min(maxX, plat.position.x))
                     }
                 } else {
-                    // Platform C: diagonal movement (horizontal + vertical)
                     plat.position.x += platformDirections[i] * speed * CGFloat(dt)
                     plat.position.y = origin.y + CGFloat(sin(currentTime * 1.5)) * vRange
                     let halfWidth = LandingPlatform.allCases[2].width / 2
@@ -644,7 +623,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let collision = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
 
         if collision == rocketCategory | platformCategory {
-            // Determine which platform node was contacted
             let platformNode: SKNode?
             if contact.bodyA.categoryBitMask == platformCategory {
                 platformNode = contact.bodyA.node
@@ -658,12 +636,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func checkLanding(contactNode: SKNode?) {
-        // Determine platform from contact node FIRST
         let landedPlatform = determineLandedPlatform(contactNode: contactNode) ?? .a
         let platformCenterX = contactNode?.position.x ?? landedPlatform.xFraction * size.width
 
-        // Check that both legs are on the platform (no partial landing)
-        // Rocket legs span ~47 units (feet at ±23.5 from center)
+        // Both legs must be on the platform (feet at ±23.5 from center)
         let legSpan: CGFloat = 47
         let rocketLeft = rocket.position.x - legSpan / 2
         let rocketRight = rocket.position.x + legSpan / 2
@@ -672,7 +648,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let platformRight = platformCenterX + platformHalfWidth
 
         if rocketLeft < platformLeft || rocketRight > platformRight {
-            // One or both legs are off the platform — crash
             snapshotFinalStats(platform: nil)
             gameState.crashDiagnosticPrimary = "Missed the platform!"
             gameState.crashDiagnosticSecondary = "Both legs must be on the platform to land safely."
@@ -680,8 +655,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             return
         }
 
-        // Use pre-contact tracked values — these reflect the actual touchdown
-        // speed before SpriteKit's collision resolution absorbs impact energy
+        // Pre-contact tracked values reflect touchdown speed before collision resolution
         let verticalSpeed = lastTrackedVerticalSpeed
         let horizontalSpeed = lastTrackedHorizontalSpeed
         let rotation = abs(lastTrackedTilt)
@@ -694,7 +668,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             self.gameState.rotation = rotation
         }
 
-        // Evaluate landing using platform-specific thresholds
         let result = LandingThresholds.evaluate(
             verticalSpeed: verticalSpeed,
             horizontalSpeed: horizontalSpeed,
@@ -731,8 +704,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func snapshotFinalStats(platform: LandingPlatform?, platformCenterX: CGFloat? = nil) {
-        // Use pre-contact tracked values — these reflect the last update frame
-        // before the collision callback, avoiding post-collision zeroed velocities
         gameState.finalTiltAngle = lastTrackedTilt  // signed (preserves direction)
         gameState.finalVerticalSpeed = lastTrackedVerticalSpeed
         gameState.finalHorizontalSpeed = lastTrackedHorizontalSpeed
@@ -752,10 +723,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         gameState.landed = true
 
         rocket.physicsBody?.isDynamic = false
-        removeFlames()
+        setEngine(on: false)
         stopThrustSound()
+        hideFlightGuidance()
 
-        // For Daily Challenge, defer sound until we know if challenge passed or failed
         let isDailyChallenge = gameState.currentMode == .dailyChallenge
         if !isDailyChallenge {
             playSuccessSound()
@@ -785,7 +756,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             self.gameState.landingSpeedBand = speedBand
             self.gameState.elapsedTime = elapsed
 
-            // Game Center: submit score
+            var challengeSuccess = false
             switch self.gameState.currentMode {
             case .campaign:
                 self.campaignState.recordCompletion(
@@ -798,8 +769,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 )
                 GameCenterManager.shared.submitCampaignScore(totalScore, levelId: self.gameState.currentLevelId, campaignState: self.campaignState)
             case .dailyChallenge:
-                // Evaluate challenge constraints
-                let challengeSuccess = DailyChallenge.evaluate(
+                challengeSuccess = DailyChallenge.evaluate(
                     platform: platform,
                     tiltRadians: rotation,
                     verticalSpeed: verticalSpeed,
@@ -808,7 +778,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     elapsedTime: elapsed
                 )
                 self.gameState.dailyChallengeSuccess = challengeSuccess
-                // Play appropriate sound based on challenge result
                 if challengeSuccess {
                     self.playSuccessSound()
                     GameCenterManager.shared.submitDailyChallengeScore(totalScore)
@@ -826,7 +795,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 GameCenterManager.shared.submitClassicScore(totalScore)
             }
 
-            // Game Center: check achievements
             GameCenterManager.shared.checkAchievements(
                 compositeBand: speedBand,
                 platform: platform,
@@ -836,18 +804,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 levelId: self.gameState.currentLevelId,
                 campaignState: self.campaignState
             )
+
+            self.gameState.flightReward = PilotProgress.shared.recordFlight(FlightOutcome(
+                landed: true,
+                platform: platform,
+                speedBand: speedBand,
+                mode: self.gameState.currentMode,
+                challengeSuccess: challengeSuccess
+            ))
         }
 
-        createSuccessEffect()
+        createTouchdownEffect(platform: platform, speedBand: speedBand)
     }
 
     private func crashRocket() {
         guard !gameState.gameOver else { return }
 
         // Only snapshot and compute diagnostics if not already set by checkLanding
-        let diagnosticsAlreadySet = !gameState.crashDiagnosticPrimary.isEmpty
-
-        if !diagnosticsAlreadySet {
+        if gameState.crashDiagnosticPrimary.isEmpty {
             snapshotFinalStats(platform: nil)
 
             let verticalSpeed = gameState.finalVerticalSpeed
@@ -873,14 +847,23 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         gameState.landed = false
 
         rocket.physicsBody?.isDynamic = false
-        removeFlames()
+        setEngine(on: false)
         stopThrustSound()
+        hideFlightGuidance()
 
         playExplosionSound()
         HapticManager.shared.crash()
 
+        let mode = gameState.currentMode
         DispatchQueue.main.async {
             self.gameState.landingMessage = self.gameState.crashDiagnosticPrimary
+            self.gameState.flightReward = PilotProgress.shared.recordFlight(FlightOutcome(
+                landed: false,
+                platform: nil,
+                speedBand: .fail,
+                mode: mode,
+                challengeSuccess: false
+            ))
         }
 
         createExplosion(at: rocket.position)

@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var showingLevelSelect = false
     @State private var showingLeaderboard = false
     @State private var showingDailyBriefing = false
+    @State private var showingHangar = false
     @StateObject private var highScoreManager = HighScoreManager()
     @StateObject private var campaignState = CampaignState()
     @StateObject private var gameState = GameState()
@@ -44,6 +45,13 @@ struct ContentView: View {
                     showingLevelSelect: $showingLevelSelect,
                     gameCenterManager: gameCenterManager
                 )
+            } else if showingHangar {
+                HangarView(
+                    showingHangar: $showingHangar,
+                    hangar: HangarManager.shared,
+                    blueStars: BlueStarManager.shared,
+                    progress: PilotProgress.shared
+                )
             } else if showingDailyBriefing {
                 DailyChallengeBriefingView(
                     gameState: gameState,
@@ -58,6 +66,7 @@ struct ContentView: View {
                     showingLevelSelect: $showingLevelSelect,
                     showingLeaderboard: $showingLeaderboard,
                     showingDailyBriefing: $showingDailyBriefing,
+                    showingHangar: $showingHangar,
                     highScoreManager: highScoreManager,
                     campaignState: campaignState,
                     gameState: gameState,
@@ -68,19 +77,53 @@ struct ContentView: View {
         .preferredColorScheme(.dark)
         .onAppear {
             gameCenterManager.authenticate()
+            #if DEBUG
+            applyDebugLaunch()
+            #endif
         }
     }
 }
+
+#if DEBUG
+extension ContentView {
+    private func applyDebugLaunch() {
+        switch DebugLaunch.value("-screen") {
+        case "hangar":
+            showingHangar = true
+        case "game":
+            switch DebugLaunch.value("-mode") {
+            case "campaign":
+                gameState.currentMode = .campaign
+                gameState.currentLevelId = Int(DebugLaunch.value("-level") ?? "1") ?? 1
+            case "daily":
+                gameState.currentMode = .dailyChallenge
+                gameState.currentLevelId = DailyChallenge.level.id
+                gameState.dailyChallengeTargetPlatform = DailyChallenge.targetPlatform
+            default:
+                gameState.currentMode = .classic
+            }
+            gameState.reset()
+            showingGame = true
+        default:
+            break
+        }
+    }
+}
+#endif
 
 struct MenuView: View {
     @Binding var showingGame: Bool
     @Binding var showingLevelSelect: Bool
     @Binding var showingLeaderboard: Bool
     @Binding var showingDailyBriefing: Bool
+    @Binding var showingHangar: Bool
     @ObservedObject var highScoreManager: HighScoreManager
     @ObservedObject var campaignState: CampaignState
     @ObservedObject var gameState: GameState
     @ObservedObject var gameCenterManager: GameCenterManager
+    @ObservedObject private var pilotProgress = PilotProgress.shared
+    @ObservedObject private var hangar = HangarManager.shared
+    @ObservedObject private var blueStars = BlueStarManager.shared
     @State private var showingHowToPlay = false
     @State private var showingSettings = false
 
@@ -149,9 +192,18 @@ struct MenuView: View {
                     .shadow(color: .black.opacity(0.8), radius: 4, y: 3)
             }
 
-            // Rocket illustration
-            RocketIllustration()
-                .frame(width: 60, height: 85)
+            // Equipped Starship (tap to open the Hangar)
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.3)) { showingHangar = true }
+            }) {
+                ShipPreviewView(skin: hangar.selectedSkin)
+                    .frame(width: 90, height: 130)
+            }
+            .buttonStyle(.plain)
+
+            // Pilot rank + XP
+            PilotRankCard(progress: pilotProgress)
+                .frame(maxWidth: 300)
 
             // Top Pilots leaderboard card
             if !highScoreManager.scores.isEmpty {
@@ -232,23 +284,23 @@ struct MenuView: View {
                     }
                 }
 
-                if BlueStarManager.shared.blueStars > 0 {
+                if blueStars.blueStars > 0 {
                     HStack(spacing: 4) {
                         Image(systemName: "star.fill")
                             .font(.system(size: 14))
                             .foregroundColor(.cyan)
-                        Text("\(BlueStarManager.shared.blueStars)")
+                        Text("\(blueStars.blueStars)")
                             .font(.system(size: 14, weight: .bold, design: .monospaced))
                             .foregroundColor(.cyan)
                     }
                 }
 
-                if BlueStarManager.shared.currentStreak > 0 && BlueStarManager.shared.isStreakActive {
+                if blueStars.currentStreak > 0 && blueStars.isStreakActive {
                     HStack(spacing: 4) {
                         Image(systemName: "flame.fill")
                             .font(.system(size: 14))
                             .foregroundColor(.orange)
-                        Text("\(BlueStarManager.shared.currentStreak)d")
+                        Text("\(blueStars.currentStreak)d")
                             .font(.system(size: 14, weight: .bold, design: .monospaced))
                             .foregroundColor(.orange)
                     }
@@ -363,6 +415,30 @@ struct MenuView: View {
                     )
                     .cornerRadius(14)
                     .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
+                }
+
+                // Hangar
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showingHangar = true
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "paintbrush.fill")
+                        Text("HANGAR")
+                        Spacer()
+                        Text("\(hangar.ownedSkins.count)/\(ShipSkin.allCases.count)")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .opacity(0.8)
+                    }
+                    .font(.custom("Orbitron", size: 15).weight(.bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(Color.white.opacity(0.08))
+                    .cornerRadius(14)
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.15), lineWidth: 1))
                 }
             }
             .padding(.horizontal, 16)

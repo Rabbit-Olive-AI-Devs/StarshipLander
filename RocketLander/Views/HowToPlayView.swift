@@ -27,12 +27,14 @@ struct HowToPlayView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         controlsSection
+                        flightAidsSection
                         platformsSection
                         speedBandsSection
                         scoringSection
                         campaignSection
                         dailyChallengeSection
                         blueStarsSection
+                        pilotRankSection
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 40)
@@ -383,6 +385,54 @@ struct HowToPlayView: View {
         }
     }
 
+    // MARK: - Flight Aids
+
+    private var flightAidsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader("Flight Aids")
+            controlRow(icon: "arrow.down.to.line.compact", color: .green,
+                       title: "Guide Line",
+                       detail: "Near the ground a line drops from your legs to the surface. Green means both legs fit the pad below; yellow means you're on the edge.")
+            controlRow(icon: "speedometer", color: .yellow,
+                       title: "Descent Readout",
+                       detail: "The \u{2193} speed and altitude beside your ship turn green, yellow or red using the limits of the pad below you.")
+            controlRow(icon: "gyroscope", color: .cyan,
+                       title: "RCS Attitude Hold",
+                       detail: "Release rotation and the ship's thrusters damp any spin, as long as you have fuel.")
+        }
+    }
+
+    // MARK: - Pilot Rank
+
+    private var pilotRankSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader("Pilot Rank & Hangar")
+            Text("Every flight earns XP. Landings earn more: harder pads, clean touchdowns, landing streaks and daily challenges add bonuses. Each promotion awards \(PilotProgress.blueStarsPerPromotion) Blue Stars.")
+                .font(.caption)
+                .foregroundColor(.gray)
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(PilotRank.all, id: \.index) { rank in
+                    HStack(spacing: 8) {
+                        Image(systemName: rank.icon)
+                            .font(.system(size: 10))
+                            .foregroundColor(.cyan)
+                            .frame(width: 18)
+                        Text(rank.title)
+                            .font(.caption.bold())
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text("\(rank.xpRequired) XP")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+            Text("Spend Blue Stars in the Hangar on new Starship paint schemes. Some schemes unlock for free when you reach a rank.")
+                .font(.caption2)
+                .foregroundColor(.gray)
+        }
+    }
+
     // MARK: - Blue Stars
 
     private var blueStarsSection: some View {
@@ -404,6 +454,7 @@ struct HowToPlayView: View {
                 rewardRow(title: "10 Campaign Stars", detail: "+10 Blue Stars milestone", icon: "star.fill", color: .yellow)
                 rewardRow(title: "20 Campaign Stars", detail: "+50 Blue Stars milestone", icon: "star.fill", color: .yellow)
                 rewardRow(title: "30 Campaign Stars", detail: "+150 Blue Stars milestone", icon: "star.fill", color: .yellow)
+                rewardRow(title: "Pilot Rank Promotion", detail: "+\(PilotProgress.blueStarsPerPromotion) Blue Stars every time you rank up", icon: "chevron.up.circle.fill", color: .cyan)
             }
 
             Text("Campaign milestones are one-time rewards. Daily challenges and streaks can be earned every day.")
