@@ -37,7 +37,7 @@ Guide your Starship through a controlled descent and land safely on one of three
 - **Campaign Chapter 2 — Starship Program (v3.0.0)**: Starbase tower catch, Belly Flop flip-and-burn, Phobos low-fuel landing, Ceres meteor shower, Mars Night landing by landing light (levels 11–15, 45 stars total)
 - **Atmospheric Drag (v3.0.0)**: chapter 2 worlds with air slow a ship falling sideways ~5.5× more than an upright one; reentry plasma glow at high speed
 - **Ghost Replay (v3.0.0)**: your best landing on each level flies beside you as a translucent "BEST" ghost
-- **Realistic Rendering (v3.0.0)**: lit brushed-steel hull with engine soot, folding landing legs, shock diamonds, procedural regolith terrain with strata and boulders, sphere-lit planets with atmosphere halos, concrete pads with hazard stripes and floodlights
+- **Realistic Art (v3.0.0)**: rendered 3D-lit planets with atmospheres, Milky Way starfield, regolith ground texture, and a detailed stainless/heat-tile Starship for every skin (`Scripts/render_art.py` regenerates all of it), plus folding landing legs, shock diamonds and floodlit concrete pads
 - **Pilot Rank (v2.3.0)**: 10 ranks from Cadet to Starship Legend. Every flight earns XP (bonuses for harder pads, clean landings, landing streaks, daily challenges); each promotion awards 5 Blue Stars
 - **Hangar (v2.3.0)**: 7 Starship paint schemes (Stainless, Night Ops, Red Planet, Lunar Gold, Europa Ice, Synthwave, Legend) unlocked with Blue Stars or by Pilot Rank; engine plume color matches the livery
 - **Cinematic Landing Camera (v2.3.0)**: smooth zoom toward the ship on final approach, camera shake on touchdown/explosions
@@ -187,6 +187,7 @@ StarshipLander/
 │   ├── export_chat_transcripts.py   # Claude Code transcript exporter
 │   ├── ci_xcodebuild.sh             # CI build + test
 │   ├── ci_screenshots.sh            # CI simulator screenshots (DEBUG launch args + autopilot)
+│   ├── render_art.py                # Renders planets, sky, ground and ship sprites into Assets.xcassets
 │   └── release_testflight.sh        # Archive + upload to TestFlight from a signed-in Mac
 ├── .github/
 │   ├── pull_request_template.md     # PR checklist template

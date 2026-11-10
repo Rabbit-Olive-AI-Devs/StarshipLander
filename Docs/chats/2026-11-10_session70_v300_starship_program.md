@@ -22,6 +22,10 @@
 **What:** Lit brushed-steel hull, soot, gradient flaps, shock diamonds, procedural terrain, boulders, sphere-lit planets with halos/corona, Mars features (previously unused), concrete pads with hazard stripes and floodlight pools; legs stowed until 200 pts altitude.
 **Files:** `StarshipArt.swift`, `GameScene+Setup.swift`, `GameScene+Juice.swift`
 
+### 4b. Rendered realistic art (after Thiago's review)
+**What:** Thiago said the V3 screenshots did not look realistic (planets, background, ship). Replaced vector-shape art with images rendered by a new numpy pipeline, `Scripts/render_art.py`: lit planets with noise-based surfaces and atmospheres, Milky Way starfield, regolith ground texture, and a slender Starship (steel reflections, weld rings, hex tiles, swept flaps, Raptors) for all 7 skins; legs as separate hinged sprites. Previewed and iterated locally (ship proportions, crater relief, polar caps, Jupiter bands, Saturn ring shadow, Sun corona) before integrating.
+**Files:** `Scripts/render_art.py` (new), `Assets.xcassets/*` (18 imagesets, ~4 MB), `StarshipArt.swift`, `GameScene+Setup.swift`, `Models/LevelDefinition.swift` (`CelestialBody` slimmed), `Models/ShipSkin.swift` (unused palette fields removed)
+
 ### 5. Control catch-up window 0.05 → 0.1 s
 **Why:** CI simulator frames below 20 fps still under-thrusted (Classic autopilot crash in screenshots).
 **Files:** `GameScene.swift`, `GameScene+Chapter2.swift`

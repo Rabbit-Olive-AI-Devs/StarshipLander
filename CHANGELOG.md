@@ -19,12 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Reentry plasma** glow on the ship's leading face when falling fast through air.
 - **Ghost replay**: your best landing on each Campaign level and Classic is recorded (20 samples/s) and flown alongside you as a translucent "BEST" ghost (`GhostRun.swift`).
 - **Folding landing legs**: legs start stowed along the hull and swing down below 200 pts altitude with a clunk.
-- **Realistic rendering pass**: cylinder-lit brushed-steel hull with engine soot, gradient flaps, shock diamonds in the plume, procedural regolith terrain (lit surface, strata, speckle, pebbles), shaded boulders, sphere-lit planets with atmosphere halos and solar corona, Mars surface features, concrete pads with hazard stripes and floodlight pools.
+- **Rendered realistic art** (`Scripts/render_art.py`, assets in `Assets.xcassets`): 3D-lit planets with surface detail and atmospheres (Earth with clouds and ocean glint, Moon and Phobos with lit craters, Mars with polar cap, banded Jupiter with the Great Red Spot, Saturn with rings, cracked Europa, Sun with corona); deep-space starfield with the Milky Way drawn over each sky; regolith/crater ground texture tinted per world; a slender Starship with mirror-steel reflections, weld rings, hex heat-shield tiles, swept flaps and Raptor bells, rendered for all 7 Hangar skins; shock diamonds in the plume; concrete pads with hazard stripes and floodlights; shaded boulders.
 - Game Center setup script lists `campaign_11`–`campaign_15` leaderboards; default leaderboard names for the new levels.
 - Tests: `ChapterTwoTests` (drag model, belly-flop terminal velocity, ghost storage/interpolation); level tests updated for 15 levels.
 
 ### Changed
 - Campaign spawn attitude and starting fuel are per level (`initialTilt`, `initialFuel`), defaulting to the existing reentry state.
+- Ship, planets, sky and terrain switched from vector shapes to rendered textures; old shape-drawing code removed (`CelestialBody` now only carries name + radius; skin palettes keep plume/debris colors). Collision geometry unchanged.
 
 ## [2.3.0] — Build 39 (Phase: Engagement — "Mission Control")
 
