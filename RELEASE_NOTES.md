@@ -1,5 +1,20 @@
 # Release Notes
 
+## Version 3.0.0 (Build 40) — "Starship Program"
+**Status:** In development on `claude/v300-starship-program` (stacked on v2.3.0). Not uploaded.
+
+### App Store — What's New (Copy this)
+```
+STARSHIP PROGRAM
+
+• Chapter 2: five new missions. Get caught by the launch tower, belly flop into a flip-and-burn, land on Phobos with almost no fuel, dodge a meteor shower on Ceres, and land at night on Mars
+• Real atmosphere: falling sideways slows you down, just like the real Starship
+• Race your ghost: your best landing on every level flies beside you
+• All-new realistic look: lit steel hull, folding landing legs, shock diamonds, textured terrain and shaded planets
+```
+
+---
+
 ## Version 2.3.0 (Build 39) — "Mission Control"
 **Status:** Release candidate for TestFlight. CI build + full test suite green on GitHub Actions; simulator screenshots verified.
 

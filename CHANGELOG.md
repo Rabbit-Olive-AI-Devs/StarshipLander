@@ -5,6 +5,27 @@ All notable changes to the Starship Lander project will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] — Build 40 (Phase: Content — "Starship Program")
+
+### Added
+- **Campaign Chapter 2: Starship Program** (levels 11–15, unlocked after Jupiter):
+  - **Starbase** — pad C becomes the launch tower: hover into the chopstick arms, which swing closed on a successful catch ("Caught by the tower!").
+  - **Belly Flop** — spawn horizontal (90°) high above Earth; falling belly-first is slow, so flip upright and burn at the right moment.
+  - **Phobos** — 0.7 gravity, Mars filling the sky, only 45% propellant.
+  - **Ceres** — meteor shower with red warning markers; meteors are lethal and crater the ground.
+  - **Mars Night** — darkness except the ship's landing light, its ground light pool and the pad beacons; light dust wind.
+  - Mission briefings on the pre-flight overlay; chapter headers in Level Select; star totals now out of 45.
+- **Atmospheric flight model** for chapter 2 worlds: quadratic drag scaled by attitude (sideways ≈ 5.5× upright area; Earth belly-flop terminal velocity ≈ 150 pts/s). Chapter 1 worlds keep their original vacuum model.
+- **Reentry plasma** glow on the ship's leading face when falling fast through air.
+- **Ghost replay**: your best landing on each Campaign level and Classic is recorded (20 samples/s) and flown alongside you as a translucent "BEST" ghost (`GhostRun.swift`).
+- **Folding landing legs**: legs start stowed along the hull and swing down below 200 pts altitude with a clunk.
+- **Realistic rendering pass**: cylinder-lit brushed-steel hull with engine soot, gradient flaps, shock diamonds in the plume, procedural regolith terrain (lit surface, strata, speckle, pebbles), shaded boulders, sphere-lit planets with atmosphere halos and solar corona, Mars surface features, concrete pads with hazard stripes and floodlight pools.
+- Game Center setup script lists `campaign_11`–`campaign_15` leaderboards; default leaderboard names for the new levels.
+- Tests: `ChapterTwoTests` (drag model, belly-flop terminal velocity, ghost storage/interpolation); level tests updated for 15 levels.
+
+### Changed
+- Campaign spawn attitude and starting fuel are per level (`initialTilt`, `initialFuel`), defaulting to the existing reentry state.
+
 ## [2.3.0] — Build 39 (Phase: Engagement — "Mission Control")
 
 ### Added

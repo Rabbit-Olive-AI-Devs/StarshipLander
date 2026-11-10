@@ -294,20 +294,47 @@ enum StarshipArt {
             ship.addChild(shape(nozzlePath, fill: SKColor(red: 0.1, green: 0.1, blue: 0.12, alpha: 1), stroke: darkMetal, line: 0.5))
         }
 
-        // Landing legs + feet
+        // Landing legs + feet, each on a hinge node so they can fold against the hull
         for offset in [-1, 1] {
             let s = CGFloat(offset)
+            let hinge = CGPoint(x: s * 10, y: -h/2 + 3)
+            let leg = SKNode()
+            leg.name = legNodeName
+            leg.position = hinge
+            leg.userData = ["side": s]
             let legPath = CGMutablePath()
-            legPath.move(to: CGPoint(x: s * 8, y: -h/2 + 2))
-            legPath.addLine(to: CGPoint(x: s * 22, y: -h/2 - 18))
-            legPath.addLine(to: CGPoint(x: s * 25, y: -h/2 - 17))
-            legPath.addLine(to: CGPoint(x: s * 12, y: -h/2 + 4))
+            legPath.move(to: CGPoint(x: s * 8 - hinge.x, y: -h/2 + 2 - hinge.y))
+            legPath.addLine(to: CGPoint(x: s * 22 - hinge.x, y: -h/2 - 18 - hinge.y))
+            legPath.addLine(to: CGPoint(x: s * 25 - hinge.x, y: -h/2 - 17 - hinge.y))
+            legPath.addLine(to: CGPoint(x: s * 12 - hinge.x, y: -h/2 + 4 - hinge.y))
             legPath.closeSubpath()
-            ship.addChild(shape(legPath, fill: SKColor(red: 0.45, green: 0.45, blue: 0.48, alpha: 1), stroke: p.stroke.withAlphaComponent(0.6), line: 1))
-            ship.addChild(rect(CGSize(width: 8, height: 2.5), at: CGPoint(x: s * 23.5, y: -h/2 - 18), fill: SKColor(red: 0.35, green: 0.35, blue: 0.38, alpha: 1), corner: 1))
+            leg.addChild(shape(legPath, fill: SKColor(red: 0.45, green: 0.45, blue: 0.48, alpha: 1), stroke: p.stroke.withAlphaComponent(0.6), line: 1))
+            leg.addChild(rect(CGSize(width: 8, height: 2.5), at: CGPoint(x: s * 23.5 - hinge.x, y: -h/2 - 18 - hinge.y), fill: SKColor(red: 0.35, green: 0.35, blue: 0.38, alpha: 1), corner: 1))
+            ship.addChild(leg)
         }
 
         return ship
+    }
+
+    // MARK: Landing legs
+
+    static let legNodeName = "landingLeg"
+    /// Folded angle magnitude (legs swing up along the hull, ~137°).
+    static let legStowedAngle: CGFloat = 2.4
+
+    /// Folds (deployed = false) or extends the landing legs.
+    static func setLegs(of ship: SKNode, deployed: Bool, animated: Bool) {
+        ship.enumerateChildNodes(withName: legNodeName) { node, _ in
+            let side = (node.userData?["side"] as? CGFloat) ?? 1
+            let target = deployed ? 0 : side * legStowedAngle
+            if animated {
+                let swing = SKAction.rotate(toAngle: target, duration: 0.45, shortestUnitArc: false)
+                swing.timingMode = .easeOut
+                node.run(swing)
+            } else {
+                node.zRotation = target
+            }
+        }
     }
 
     // MARK: Engine

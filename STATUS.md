@@ -2,7 +2,7 @@
 
 > **This file is the authoritative, compressed snapshot of the project.**
 > Chat logs are historical input. This file defines current truth.
-> Last reconciled: 2026-11-10 (Session 69)
+> Last reconciled: 2026-11-10 (Session 70)
 
 ---
 
@@ -14,8 +14,8 @@
 | Bundle ID | com.tboliveira.StarshipLander |
 | Platform | iOS (iPhone), iOS 15.0+ |
 | Tech | SwiftUI + SpriteKit + CoreMotion |
-| Current Version | **v2.3.0 (Build 39) "Mission Control"** — Pilot Rank XP, Hangar skins, cinematic landing camera, flight guidance, RCS hold, visual overhaul, sound/haptics + frame-rate fixes. |
-| Version Status | **v2.3.0 Build 39 code complete on branch `claude/v230-mission-control`** (PR to main). GitHub Actions: build + full test suite green, simulator screenshots verified. TestFlight upload pending: needs the `testflight.yml` secrets or `Scripts/release_testflight.sh` on a Mac. v2.2.1 Build 38 status from May: submitted for review. |
+| Current Version | **v3.0.0 (Build 40) "Starship Program"** in development on `claude/v300-starship-program` (stacked on v2.3.0 Build 39). |
+| Version Status | v3.0.0 Build 40: code complete, CI build + tests green, simulator screenshots reviewed. v2.3.0 Build 39: PR #4, TestFlight upload pending (Jarvis asked to run `Scripts/release_testflight.sh` on the home Mac; no API key secrets in GitHub). Neither uploaded yet. |
 | Last Published | v2.2.0 (Build 37) — on App Store (approved/distributed 2026-05-03) |
 | Developer | Thiago Borges de Oliveira / Rabbit Olive Studios |
 | Team ID | 6XK6BNVURL |
@@ -24,6 +24,14 @@
 ---
 
 ## What Is Done
+
+**v3.0.0 — Starship Program (code complete, CI-verified):**
+
+- **Chapter 2 campaign** (levels 11–15): Starbase tower catch, Belly Flop, Phobos low fuel, Ceres meteor shower, Mars Night (`LevelDefinition.swift`, `GameScene+Chapter2.swift`), mission briefings, chapter headers, 45 stars.
+- **Atmospheric drag** (attitude-dependent) + reentry plasma on chapter 2 worlds.
+- **Ghost replay** of personal bests (`GhostRun.swift`).
+- **Folding landing legs** that deploy below 200 pts.
+- **Realistic rendering**: lit hull, soot, shock diamonds, procedural terrain + boulders, sphere-lit planets, concrete pads + floodlights.
 
 **v2.3.0 — Mission Control (code complete, CI-verified):**
 
@@ -77,6 +85,7 @@ v2.2.0 adds three pillars: (1) Daily Challenge system with 75 templates, auto-co
 
 ## Immediate Next Tasks (ordered)
 
+0a. **v3.0.0**: after v2.3.0 is on TestFlight, upload Build 40 the same way; create `campaign_11`–`campaign_15` leaderboards (`Scripts/setup_game_center.py`); device-test chapter 2 (belly flop feel, night darkness, meteor fairness).
 0. **v2.3.0**: add `ASC_KEY_ID` / `ASC_ISSUER_ID` / `ASC_KEY_P8` GitHub secrets and push tag `testflight/v2.3.0-b39` (or run `Scripts/release_testflight.sh` on the Mac); device-test on TestFlight (feel of RCS hold, landing camera, Hangar); merge PR; submit for review with the RELEASE_NOTES copy.
 
 1. Monitor v2.2.1 Build 38 review status until approved/distributed.

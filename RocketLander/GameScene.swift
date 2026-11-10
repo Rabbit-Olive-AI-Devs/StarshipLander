@@ -91,6 +91,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var ghostRun: GhostRun?
     var ghostSamples: [GhostSample] = []
     var lastGhostSampleTime: TimeInterval = -1
+    var legsDeployed = false
 
     // Physics categories
     let rocketCategory: UInt32 = 0x1 << 0
@@ -100,6 +101,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // RCS attitude hold: extra angular damping while no rotation input is held.
     static let freeAngularDamping: CGFloat = 0.7
     static let rcsHoldAngularDamping: CGFloat = 2.6
+    /// Longest frame (s) that control inputs catch up on; longer hitches (app pauses) are dropped.
+    static let maxStep: TimeInterval = 0.1
 
     // MARK: - Init
 
@@ -181,6 +184,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         towerArms = []
         ghostNode = nil
         createRocket()
+        StarshipArt.setLegs(of: rocket, deployed: false, animated: false)
+        legsDeployed = false
         createFlightGuidance()
 
         hasStarted = false
@@ -363,7 +368,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         frameCounter += 1
         // Control inputs are tuned per 60 fps frame; scale by real elapsed time so
         // thrust, rotation and fuel burn stay identical when frames drop.
-        let frameScale = CGFloat(min(dt, 0.05) * 60)
+        let frameScale = CGFloat(min(dt, GameScene.maxStep) * 60)
 
         if gameStartTime > 0 {
             gameState.elapsedTime = currentTime - gameStartTime

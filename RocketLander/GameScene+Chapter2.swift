@@ -32,7 +32,7 @@ extension GameScene {
         let speed = hypot(v.dx, v.dy)
         guard speed > 1 else { return }
         let c = GameScene.dragCoefficient * density * GameScene.dragArea(tilt: rocket.zRotation)
-        let dv = min(speed, c * speed * speed * CGFloat(min(dt, 0.05)))
+        let dv = min(speed, c * speed * speed * CGFloat(min(dt, GameScene.maxStep)))
         v.dx -= v.dx / speed * dv
         v.dy -= v.dy / speed * dv
         rocket.physicsBody?.velocity = v
@@ -87,8 +87,9 @@ extension GameScene {
         let pad = platforms[2]
         let padWidth = LandingPlatform.c.width
         let padTop = pad.position.y + 4
-        let towerX = pad.position.x + padWidth / 2 + 30
         let towerWidth: CGFloat = 24
+        // Keep the whole tower on screen; the arms reach back over the catch rails
+        let towerX = min(pad.position.x + padWidth / 2 + 30, size.width - towerWidth / 2 - 2)
         let towerHeight: CGFloat = min(size.height * 0.62, 560)
 
         // Catch rails replace the pad look
@@ -136,7 +137,7 @@ extension GameScene {
 
         // Chopstick arms (front + back), parked upright against the tower until the catch
         towerArms = []
-        let armLength = padWidth + 26
+        let armLength = (towerX - towerWidth / 2) - (pad.position.x - padWidth / 2) + 6
         for (offset, shade) in [(CGFloat(3), CGFloat(0.22)), (CGFloat(0), CGFloat(0.32))] {
             let arm = SKNode()
             arm.position = CGPoint(x: towerX - towerWidth / 2, y: padTop + 32 + offset)
@@ -281,10 +282,10 @@ extension GameScene {
             let colors = [
                 UIColor.black.withAlphaComponent(0).cgColor,
                 UIColor.black.withAlphaComponent(0).cgColor,
-                UIColor.black.withAlphaComponent(0.93).cgColor,
-                UIColor.black.withAlphaComponent(0.93).cgColor,
+                UIColor.black.withAlphaComponent(0.96).cgColor,
+                UIColor.black.withAlphaComponent(0.96).cgColor,
             ] as CFArray
-            guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.07, 0.22, 1]) else { return }
+            guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.025, 0.09, 1]) else { return }
             let center = CGPoint(x: 256, y: 256)
             ctx.cgContext.drawRadialGradient(gradient, startCenter: center, startRadius: 0, endCenter: center, endRadius: 362, options: [.drawsAfterEndLocation])
         }
