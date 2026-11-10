@@ -62,6 +62,9 @@
 		V2000006 /* HangarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = V1000006 /* HangarView.swift */; };
 		V2000007 /* PilotProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V1000007 /* PilotProgressTests.swift */; };
 		V2000008 /* ShipSkinTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V1000008 /* ShipSkinTests.swift */; };
+		W2000001 /* GhostRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = W1000001 /* GhostRun.swift */; };
+		W2000002 /* GameScene+Chapter2.swift in Sources */ = {isa = PBXBuildFile; fileRef = W1000002 /* GameScene+Chapter2.swift */; };
+		W2000003 /* ChapterTwoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = W1000003 /* ChapterTwoTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -133,6 +136,9 @@
 		V1000006 /* HangarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HangarView.swift; sourceTree = "<group>"; };
 		V1000007 /* PilotProgressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilotProgressTests.swift; sourceTree = "<group>"; };
 		V1000008 /* ShipSkinTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShipSkinTests.swift; sourceTree = "<group>"; };
+		W1000001 /* GhostRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhostRun.swift; sourceTree = "<group>"; };
+		W1000002 /* GameScene+Chapter2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GameScene+Chapter2.swift"; sourceTree = "<group>"; };
+		W1000003 /* ChapterTwoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterTwoTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -166,6 +172,7 @@
 		A5000002 /* RocketLander */ = {
 			isa = PBXGroup;
 			children = (
+				W1000002 /* GameScene+Chapter2.swift */,
 				V1000004 /* GameScene+Juice.swift */,
 				V1000003 /* StarshipArt.swift */,
 				A2000001 /* RocketLanderApp.swift */,
@@ -221,6 +228,7 @@
 		C3000001 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				W1000001 /* GhostRun.swift */,
 				V1000002 /* PilotProgress.swift */,
 				V1000001 /* ShipSkin.swift */,
 				C1000001 /* GameState.swift */,
@@ -266,6 +274,7 @@
 		T3000001 /* RocketLanderTests */ = {
 			isa = PBXGroup;
 			children = (
+				W1000003 /* ChapterTwoTests.swift */,
 				V1000008 /* ShipSkinTests.swift */,
 				V1000007 /* PilotProgressTests.swift */,
 				T1000001 /* ScoringTests.swift */,
@@ -393,6 +402,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				W2000002 /* GameScene+Chapter2.swift in Sources */,
+				W2000001 /* GhostRun.swift in Sources */,
 				V2000006 /* HangarView.swift in Sources */,
 				V2000005 /* ProgressionViews.swift in Sources */,
 				V2000004 /* GameScene+Juice.swift in Sources */,
@@ -435,6 +446,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				W2000003 /* ChapterTwoTests.swift in Sources */,
 				V2000008 /* ShipSkinTests.swift in Sources */,
 				V2000007 /* PilotProgressTests.swift in Sources */,
 				T2000001 /* ScoringTests.swift in Sources */,

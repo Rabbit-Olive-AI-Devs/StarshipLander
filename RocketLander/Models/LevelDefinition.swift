@@ -12,6 +12,11 @@ enum SpecialMechanic: String, Codable {
     case deepCraters         // Ganymede: deep terrain
     case volcanicEruptions   // Io: volcanic particles
     case extremeWind         // Jupiter: extreme wind gusts
+    case towerCatch          // Starbase: caught by the tower's chopstick arms (pad C)
+    case bellyFlop           // Earth high altitude: start horizontal, flip and burn
+    case lowFuel             // Phobos: start with a fraction of the propellant
+    case meteorShower        // Ceres: meteors fall from the sky
+    case nightLanding        // Mars night: land by the ship's own landing light
 
     var displayName: String {
         switch self {
@@ -25,6 +30,11 @@ enum SpecialMechanic: String, Codable {
         case .deepCraters: return "Deep Craters"
         case .volcanicEruptions: return "Volcanic Eruptions"
         case .extremeWind: return "Extreme Wind"
+        case .towerCatch: return "Tower Catch"
+        case .bellyFlop: return "Belly Flop"
+        case .lowFuel: return "Low Fuel"
+        case .meteorShower: return "Meteor Shower"
+        case .nightLanding: return "Night Landing"
         }
     }
 }
@@ -45,6 +55,9 @@ struct CelestialBody {
     static let moon = CelestialBody(name: "Moon", radius: 40, color: SKColor(red: 0.85, green: 0.85, blue: 0.8, alpha: 1.0), hasRings: false, craterCount: 5)           // from Earth
     static let sunMedium = CelestialBody(name: "Sun", radius: 45, color: SKColor(red: 1.0, green: 0.95, blue: 0.6, alpha: 1.0), hasRings: false, craterCount: 0)        // from Venus
     static let sunLarge = CelestialBody(name: "Sun", radius: 70, color: SKColor(red: 1.0, green: 0.95, blue: 0.7, alpha: 1.0), hasRings: false, craterCount: 0)         // from Mercury (closest)
+    static let marsLarge = CelestialBody(name: "Mars", radius: 115, color: SKColor(red: 0.78, green: 0.38, blue: 0.22, alpha: 1.0), hasRings: false, craterCount: 4)       // from Phobos (huge)
+    static let sunTiny = CelestialBody(name: "Sun", radius: 16, color: SKColor(red: 1.0, green: 0.95, blue: 0.8, alpha: 1.0), hasRings: false, craterCount: 0)           // from Ceres (far)
+    static let phobosSmall = CelestialBody(name: "Phobos", radius: 14, color: SKColor(red: 0.55, green: 0.5, blue: 0.45, alpha: 1.0), hasRings: false, craterCount: 3)  // from Mars at night
     static let europaSmall = CelestialBody(name: "Europa", radius: 25, color: SKColor(red: 0.7, green: 0.8, blue: 0.9, alpha: 1.0), hasRings: false, craterCount: 0)    // from Jupiter
 }
 
@@ -61,6 +74,18 @@ struct LevelDefinition {
     let celestialBody: CelestialBody
     let specialMechanic: SpecialMechanic
     let description: String
+
+    // Chapter 2 ("Starship Program") extensions. Defaults keep chapter 1 unchanged.
+    var chapter: Int = 1
+    /// Air density for the drag model (0 = vacuum). Drag depends on attitude:
+    /// a ship falling sideways (belly first) presents ~5x the area of an upright one.
+    var atmosphere: CGFloat = 0
+    /// Spawn attitude in radians (nil = standard campaign reentry tilt).
+    var initialTilt: CGFloat? = nil
+    /// Starting propellant (percent).
+    var initialFuel: Double = 100
+    /// Mission briefing shown on the level card.
+    var briefing: String? = nil
 
     // MARK: - All 10 Levels
     static let levels: [LevelDefinition] = [
@@ -184,7 +209,92 @@ struct LevelDefinition {
             specialMechanic: .extremeWind,
             description: "Sudden gusts between calm windows."
         ),
+
+        // MARK: Chapter 2 — Starship Program
+        // Level 11: Starbase — the tower catches the ship with its chopstick arms
+        LevelDefinition(
+            id: 11, name: "Starbase",
+            gravity: -2.8, thrustPower: 12.5,
+            skyColorTop: SKColor(red: 0.12, green: 0.1, blue: 0.3, alpha: 1.0),
+            skyColorBottom: SKColor(red: 0.95, green: 0.5, blue: 0.3, alpha: 1.0),
+            terrainColor: SKColor(red: 0.62, green: 0.55, blue: 0.42, alpha: 1.0),
+            terrainStrokeColor: SKColor(red: 0.75, green: 0.68, blue: 0.52, alpha: 1.0),
+            celestialBody: .moon,
+            specialMechanic: .towerCatch,
+            description: "Fly into the tower's chopsticks for the catch.",
+            chapter: 2,
+            atmosphere: 0.6,
+            briefing: "Pad C is the launch tower. Hover into the chopstick arms slowly and upright — they close on contact."
+        ),
+        // Level 12: Belly Flop — start horizontal, flip and burn before touchdown
+        LevelDefinition(
+            id: 12, name: "Belly Flop",
+            gravity: -2.8, thrustPower: 13.5,
+            skyColorTop: SKColor(red: 0.02, green: 0.05, blue: 0.2, alpha: 1.0),
+            skyColorBottom: SKColor(red: 0.35, green: 0.6, blue: 0.9, alpha: 1.0),
+            terrainColor: SKColor(red: 0.6, green: 0.56, blue: 0.45, alpha: 1.0),
+            terrainStrokeColor: SKColor(red: 0.72, green: 0.68, blue: 0.56, alpha: 1.0),
+            celestialBody: .moon,
+            specialMechanic: .bellyFlop,
+            description: "Fall sideways, then flip and burn at the last moment.",
+            chapter: 2,
+            atmosphere: 1.0,
+            initialTilt: .pi / 2,
+            briefing: "Falling belly-first keeps you slow. Flip upright too early and you'll plummet; too late and you won't stop."
+        ),
+        // Level 13: Phobos — tiny moon, huge Mars, almost no fuel
+        LevelDefinition(
+            id: 13, name: "Phobos",
+            gravity: -0.7, thrustPower: 4.5,
+            skyColorTop: SKColor(red: 0.0, green: 0.0, blue: 0.02, alpha: 1.0),
+            skyColorBottom: SKColor(red: 0.12, green: 0.05, blue: 0.04, alpha: 1.0),
+            terrainColor: SKColor(red: 0.42, green: 0.38, blue: 0.34, alpha: 1.0),
+            terrainStrokeColor: SKColor(red: 0.52, green: 0.47, blue: 0.42, alpha: 1.0),
+            celestialBody: .marsLarge,
+            specialMechanic: .lowFuel,
+            description: "Barely any propellant. Every burn counts.",
+            chapter: 2,
+            initialFuel: 45,
+            briefing: "Tanks at 45%. Let gravity do the work and save one long burn for the end."
+        ),
+        // Level 14: Ceres — meteor shower from the asteroid belt
+        LevelDefinition(
+            id: 14, name: "Ceres",
+            gravity: -1.1, thrustPower: 6.5,
+            skyColorTop: SKColor(red: 0.0, green: 0.0, blue: 0.03, alpha: 1.0),
+            skyColorBottom: SKColor(red: 0.06, green: 0.06, blue: 0.1, alpha: 1.0),
+            terrainColor: SKColor(red: 0.36, green: 0.36, blue: 0.38, alpha: 1.0),
+            terrainStrokeColor: SKColor(red: 0.5, green: 0.5, blue: 0.53, alpha: 1.0),
+            celestialBody: .sunTiny,
+            specialMechanic: .meteorShower,
+            description: "Meteors rain down. Watch the warnings.",
+            chapter: 2,
+            briefing: "Red markers at the top show where meteors will fall. Keep moving and don't loiter under them."
+        ),
+        // Level 15: Mars at Night — dark landing with dust wind
+        LevelDefinition(
+            id: 15, name: "Mars Night",
+            gravity: -2.0, thrustPower: 9.5,
+            skyColorTop: SKColor(red: 0.0, green: 0.0, blue: 0.02, alpha: 1.0),
+            skyColorBottom: SKColor(red: 0.08, green: 0.03, blue: 0.03, alpha: 1.0),
+            terrainColor: SKColor(red: 0.5, green: 0.22, blue: 0.14, alpha: 1.0),
+            terrainStrokeColor: SKColor(red: 0.62, green: 0.3, blue: 0.2, alpha: 1.0),
+            celestialBody: .phobosSmall,
+            specialMechanic: .nightLanding,
+            description: "Land in darkness by your own landing light.",
+            chapter: 2,
+            atmosphere: 0.25,
+            briefing: "Only your landing light and the pad beacons are visible. Trust the guide line and the readout."
+        ),
     ]
+
+    static var chapters: [Int] { Array(Set(levels.map(\.chapter))).sorted() }
+
+    static func chapterTitle(_ chapter: Int) -> String {
+        chapter == 1 ? "CHAPTER 1 · SOLAR SYSTEM" : "CHAPTER 2 · STARSHIP PROGRAM"
+    }
+
+    static var maxStars: Int { levels.count * 3 }
 
     static func level(for id: Int) -> LevelDefinition? {
         return levels.first { $0.id == id }

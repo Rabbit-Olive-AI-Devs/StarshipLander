@@ -148,6 +148,8 @@ extension GameScene {
             break // craters are enough
         case "Europa":
             addEuropaFeatures(to: body, radius: r)
+        case "Mars":
+            addMarsFeatures(to: body, radius: r)
         default:
             break
         }
@@ -166,28 +168,28 @@ extension GameScene {
             break
         }
 
-        // Atmospheric glow for planets with atmosphere
+        // Atmosphere halo (scattered light around the limb)
         let hasAtmosphere = ["Earth", "Mars", "Venus", "Saturn"].contains(celestial.name)
             || ["Titan", "Jupiter", "Io"].contains(planetName)
-        if hasAtmosphere {
-            let glow = SKShapeNode(circleOfRadius: r + 3)
-            glow.fillColor = .clear
-            glow.strokeColor = celestial.color.withAlphaComponent(0.25)
-            glow.lineWidth = 4
-            glow.glowWidth = 6
-            body.addChild(glow)
+        if hasAtmosphere || celestial.name == "Sun" {
+            let halo = SKSpriteNode(texture: StarshipArt.softDot)
+            let isSun = celestial.name == "Sun"
+            halo.size = CGSize(width: r * (isSun ? 4.2 : 2.7), height: r * (isSun ? 4.2 : 2.7))
+            halo.color = isSun ? SKColor(red: 1, green: 0.85, blue: 0.5, alpha: 1) : celestial.color.blended(with: .white, fraction: 0.3)
+            halo.colorBlendFactor = 1
+            halo.blendMode = .add
+            halo.alpha = isSun ? 0.55 : 0.4
+            halo.zPosition = -1
+            body.addChild(halo)
         }
 
-        // Terminator shadow (dark edge for 3D effect)
-        let shadowPath = CGMutablePath()
-        shadowPath.addArc(center: .zero, radius: r, startAngle: -.pi / 2, endAngle: .pi / 2, clockwise: false)
-        shadowPath.addLine(to: CGPoint(x: r * 0.3, y: -r))
-        shadowPath.closeSubpath()
-        let shadow = SKShapeNode(path: shadowPath)
-        shadow.fillColor = SKColor.black.withAlphaComponent(0.2)
-        shadow.strokeColor = .clear
-        shadow.zPosition = 2
-        body.addChild(shadow)
+        // Sphere lighting: lit upper-left, limb darkening, night side (not for the Sun)
+        if celestial.name != "Sun" {
+            let shade = SKSpriteNode(texture: StarshipArt.sphereShade)
+            shade.size = CGSize(width: r * 2 + 1, height: r * 2 + 1)
+            shade.zPosition = 2.5
+            body.addChild(shade)
+        }
 
         // Rings for Saturn/Titan
         if celestial.hasRings {
@@ -560,17 +562,13 @@ extension GameScene {
         terrain.lineWidth = 2
         terrain.zPosition = 1
 
-        // Texture rocks
-        for _ in 0..<30 {
-            let rock = SKShapeNode(circleOfRadius: CGFloat.random(in: 2...6))
-            rock.fillColor = fillColor.withAlphaComponent(0.5)
-            rock.strokeColor = .clear
-            rock.position = CGPoint(
-                x: CGFloat.random(in: 20...size.width - 20),
-                y: CGFloat.random(in: 100...200)
-            )
-            terrain.addChild(rock)
-        }
+        // Procedural rock/regolith texture (tinted by fillColor = white)
+        let maxHeight = heights.max() ?? 240
+        terrain.fillTexture = StarshipArt.terrainTexture(base: fillColor, width: size.width, height: maxHeight)
+        terrain.fillColor = .white
+        terrain.lineWidth = 1.5
+
+        addBoulders(heights: heights, segmentWidth: segmentWidth, tint: fillColor)
 
         addChild(terrain)
 
@@ -580,6 +578,31 @@ extension GameScene {
         // Ganymede (deep craters): rock pillars between platforms
         if gameState.currentMode.usesLevelDefinition && gameState.currentLevelId == 8 {
             addGanymedeRocks()
+        }
+    }
+
+    /// Shaded boulders resting on the surface, kept clear of the pads.
+    private func addBoulders(heights: [CGFloat], segmentWidth: CGFloat, tint: SKColor) {
+        let padRanges = LandingPlatform.allCases.map { pad -> ClosedRange<CGFloat> in
+            let x = pad.xFraction * size.width
+            return (x - pad.width / 2 - 12)...(x + pad.width / 2 + 12)
+        }
+        var placed = 0
+        var attempts = 0
+        while placed < 16 && attempts < 80 {
+            attempts += 1
+            let x = CGFloat.random(in: 8...(size.width - 8))
+            guard !padRanges.contains(where: { $0.contains(x) }) else { continue }
+            let i = min(heights.count - 1, Int(x / segmentWidth))
+            let width = CGFloat.random(in: 7...20)
+            let boulder = SKSpriteNode(texture: StarshipArt.boulderTexture)
+            boulder.size = CGSize(width: width, height: width * CGFloat.random(in: 0.55...0.75))
+            boulder.color = tint.blended(with: .white, fraction: 0.15)
+            boulder.colorBlendFactor = 1
+            boulder.position = CGPoint(x: x, y: heights[i] + boulder.size.height * 0.2)
+            boulder.zPosition = 1.5
+            addChild(boulder)
+            placed += 1
         }
     }
 
@@ -695,7 +718,8 @@ extension GameScene {
 
             let platformNode = SKShapeNode(rectOf: CGSize(width: platformWidth, height: platformHeight), cornerRadius: 2)
             platformNode.position = CGPoint(x: platformX, y: 220 + platformHeight / 2)
-            platformNode.fillColor = SKColor(red: 0.3, green: 0.3, blue: 0.35, alpha: 1.0)
+            platformNode.fillColor = SKColor(red: 0.85, green: 0.85, blue: 0.88, alpha: 1.0)
+            platformNode.fillTexture = StarshipArt.padTexture
             platformNode.strokeColor = SKColor(red: 0.5, green: 0.5, blue: 0.55, alpha: 1.0)
             platformNode.lineWidth = 2
             platformNode.zPosition = 3
@@ -721,6 +745,17 @@ extension GameScene {
                 leg.position = CGPoint(x: CGFloat(offset) * (platformWidth / 2 - 15), y: -14)
                 platformNode.addChild(leg)
             }
+
+            // Floodlight pool on the ground beneath the pad
+            let pool = SKSpriteNode(texture: StarshipArt.softDot)
+            pool.size = CGSize(width: platformWidth * 1.4, height: 30)
+            pool.color = platformDef.lightColor
+            pool.colorBlendFactor = 1
+            pool.blendMode = .add
+            pool.alpha = 0.22
+            pool.position = CGPoint(x: 0, y: -26)
+            pool.zPosition = -2
+            platformNode.addChild(pool)
 
             // Landing marking
             let marking = SKShapeNode(rectOf: CGSize(width: platformWidth - 20, height: 2))

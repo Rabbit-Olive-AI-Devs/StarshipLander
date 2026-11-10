@@ -150,7 +150,7 @@ struct LeaderboardView: View {
             HStack(spacing: 4) {
                 Image(systemName: "star.fill")
                     .foregroundColor(.yellow)
-                Text("\(campaignState.totalStars)/30")
+                Text("\(campaignState.totalStars)/\(LevelDefinition.maxStars)")
                     .font(.caption.bold())
                     .foregroundColor(.yellow)
             }

@@ -24,6 +24,11 @@ class CampaignState: ObservableObject {
         8: "Marius",      // Ganymede — Simon Marius, named Galilean moons
         9: "Collins",     // Io — Michael Collins, Apollo 11 pilot
         10: "Shoemaker",  // Jupiter — Eugene Shoemaker, Shoemaker-Levy 9
+        11: "Ride",       // Starbase — Sally Ride, first American woman in space
+        12: "Lovell",     // Belly Flop — Jim Lovell, Apollo 13 reentry
+        13: "Hall",       // Phobos — Asaph Hall, discovered Phobos
+        14: "Piazzi",     // Ceres — Giuseppe Piazzi, discovered Ceres
+        15: "Tereshkova", // Mars Night — Valentina Tereshkova, first woman in space
     ]
 
     init() {

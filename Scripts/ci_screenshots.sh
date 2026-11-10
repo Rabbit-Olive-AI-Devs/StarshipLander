@@ -61,9 +61,12 @@ shoot 01_menu 5 -screen menu
 shoot 02_hangar 5 -screen hangar
 shoot 03_preflight_mars 5 -screen game -mode campaign -level 2
 shoot_sequence 04_classic_autopilot "6 10 14 18" -screen game -mode classic -autopilot
-shoot_sequence 05_europa_autopilot "5 9 13" -screen game -mode campaign -level 4 -autopilot
-shoot_sequence 06_jupiter_autopilot "4 8" -screen game -mode campaign -level 10 -autopilot
-shoot 07_venus 5 -screen game -mode campaign -level 6
-shoot 08_daily 5 -screen game -mode daily
+shoot 05_venus 6 -screen game -mode campaign -level 6
+shoot 06_levels 6 -screen levels
+shoot 07_starbase 7 -screen game -mode campaign -level 11
+shoot_sequence 08_bellyflop_autopilot "4 8 12" -screen game -mode campaign -level 12 -autopilot
+shoot 09_phobos 7 -screen game -mode campaign -level 13
+shoot_sequence 10_ceres_autopilot "6 10" -screen game -mode campaign -level 14 -autopilot
+shoot_sequence 11_marsnight_autopilot "6 11" -screen game -mode campaign -level 15 -autopilot
 rm -f "$OUT/00_warmup.png"
 ls -la "$OUT"

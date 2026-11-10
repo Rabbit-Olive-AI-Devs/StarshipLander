@@ -29,6 +29,155 @@ enum StarshipArt {
         return SKTexture(image: image)
     }()
 
+    /// Horizontal cylinder lighting with fine brushed-metal streaks (grayscale, tinted by fillColor).
+    static let hullTexture: SKTexture = {
+        let size = CGSize(width: 64, height: 128)
+        let image = UIGraphicsImageRenderer(size: size).image { ctx in
+            let g = ctx.cgContext
+            let stops: [(CGFloat, CGFloat)] = [(0, 0.42), (0.12, 0.8), (0.26, 1.0), (0.4, 0.9), (0.68, 0.62), (0.88, 0.42), (1, 0.3)]
+            let colors = stops.map { UIColor(white: $0.1, alpha: 1).cgColor } as CFArray
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: stops.map { $0.0 }) {
+                g.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: size.width, y: 0), options: [])
+            }
+            var rng = SystemRandomNumberGenerator()
+            for _ in 0..<70 {
+                let x = CGFloat.random(in: 0..<size.width, using: &rng)
+                let alpha = CGFloat.random(in: 0.03...0.1, using: &rng)
+                g.setFillColor(UIColor(white: Bool.random() ? 1 : 0, alpha: alpha).cgColor)
+                g.fill(CGRect(x: x, y: 0, width: 0.6, height: size.height))
+            }
+        }
+        return SKTexture(image: image)
+    }()
+
+    /// Soot darkening near the engines (bottom of the hull), transparent above.
+    static let sootTexture: SKTexture = {
+        let size = CGSize(width: 8, height: 128)
+        let image = UIGraphicsImageRenderer(size: size).image { ctx in
+            let colors = [UIColor.black.withAlphaComponent(0).cgColor, UIColor.black.withAlphaComponent(0).cgColor, UIColor.black.withAlphaComponent(0.5).cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.68, 1]) {
+                ctx.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
+            }
+        }
+        return SKTexture(image: image)
+    }()
+
+    /// Flap depth gradient (lit leading edge to shaded trailing edge).
+    static let flapTexture: SKTexture = {
+        let size = CGSize(width: 32, height: 32)
+        let image = UIGraphicsImageRenderer(size: size).image { ctx in
+            let colors = [UIColor(white: 1, alpha: 1).cgColor, UIColor(white: 0.55, alpha: 1).cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) {
+                ctx.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: size.width, y: size.height), options: [])
+            }
+        }
+        return SKTexture(image: image)
+    }()
+
+    /// Sphere shading for planets and moons: lit from the upper left, dark limb and night side.
+    static let sphereShade: SKTexture = {
+        let size = CGSize(width: 256, height: 256)
+        let image = UIGraphicsImageRenderer(size: size).image { ctx in
+            let g = ctx.cgContext
+            g.addEllipse(in: CGRect(origin: .zero, size: size))
+            g.clip()
+            let colors = [
+                UIColor.white.withAlphaComponent(0.22).cgColor,
+                UIColor.black.withAlphaComponent(0).cgColor,
+                UIColor.black.withAlphaComponent(0.55).cgColor,
+                UIColor.black.withAlphaComponent(0.92).cgColor,
+            ] as CFArray
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.3, 0.75, 1]) {
+                let light = CGPoint(x: size.width * 0.32, y: size.height * 0.3)
+                g.drawRadialGradient(gradient, startCenter: light, startRadius: 0, endCenter: CGPoint(x: size.width * 0.45, y: size.height * 0.45), endRadius: size.width * 0.78, options: [.drawsAfterEndLocation])
+            }
+        }
+        return SKTexture(image: image)
+    }()
+
+    /// Shaded boulder (lit top-left), tinted by terrain color.
+    static let boulderTexture: SKTexture = {
+        let size = CGSize(width: 48, height: 32)
+        let image = UIGraphicsImageRenderer(size: size).image { ctx in
+            let g = ctx.cgContext
+            g.addEllipse(in: CGRect(x: 1, y: 2, width: size.width - 2, height: size.height - 3))
+            g.clip()
+            let colors = [UIColor(white: 1, alpha: 1).cgColor, UIColor(white: 0.62, alpha: 1).cgColor, UIColor(white: 0.25, alpha: 1).cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.45, 1]) {
+                g.drawRadialGradient(gradient, startCenter: CGPoint(x: size.width * 0.32, y: size.height * 0.25), startRadius: 0, endCenter: CGPoint(x: size.width * 0.5, y: size.height * 0.5), endRadius: size.width * 0.6, options: [.drawsAfterEndLocation])
+            }
+        }
+        return SKTexture(image: image)
+    }()
+
+    /// Procedural ground: lit surface fading to dark rock, strata bands, regolith speckle.
+    static func terrainTexture(base: SKColor, width: CGFloat, height: CGFloat) -> SKTexture {
+        let size = CGSize(width: max(64, width), height: max(64, height))
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let image = UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            let g = ctx.cgContext
+            let colors = [base.blended(with: .white, fraction: 0.12).cgColor, base.cgColor, base.blended(with: .black, fraction: 0.6).cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.25, 1]) {
+                g.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
+            }
+            // Strata
+            for i in 0..<7 {
+                let y0 = size.height * (0.25 + CGFloat(i) * 0.1) + CGFloat.random(in: -6...6)
+                let path = CGMutablePath()
+                path.move(to: CGPoint(x: 0, y: y0))
+                var x: CGFloat = 0
+                while x < size.width {
+                    x += 24
+                    path.addLine(to: CGPoint(x: x, y: y0 + CGFloat.random(in: -3...3)))
+                }
+                g.addPath(path)
+                g.setStrokeColor(UIColor.black.withAlphaComponent(CGFloat.random(in: 0.08...0.18)).cgColor)
+                g.setLineWidth(CGFloat.random(in: 1...3))
+                g.strokePath()
+            }
+            // Regolith speckle and pebbles
+            let count = Int(size.width * size.height / 70)
+            for _ in 0..<count {
+                let r = CGFloat.random(in: 0.5...1.8)
+                let p = CGPoint(x: CGFloat.random(in: 0..<size.width), y: CGFloat.random(in: 0..<size.height))
+                g.setFillColor(UIColor(white: Bool.random() ? 1 : 0, alpha: CGFloat.random(in: 0.05...0.18)).cgColor)
+                g.fillEllipse(in: CGRect(x: p.x, y: p.y, width: r * 2, height: r * 2))
+            }
+            for _ in 0..<Int(size.width / 12) {
+                let w = CGFloat.random(in: 3...9)
+                let p = CGPoint(x: CGFloat.random(in: 0..<size.width), y: CGFloat.random(in: size.height * 0.15..<size.height))
+                g.setFillColor(UIColor.black.withAlphaComponent(0.18).cgColor)
+                g.fillEllipse(in: CGRect(x: p.x, y: p.y, width: w, height: w * 0.6))
+            }
+        }
+        return SKTexture(image: image)
+    }
+
+    /// Concrete pad with hazard stripes on both ends.
+    static let padTexture: SKTexture = {
+        let size = CGSize(width: 128, height: 16)
+        let image = UIGraphicsImageRenderer(size: size).image { ctx in
+            let g = ctx.cgContext
+            let colors = [UIColor(white: 0.72, alpha: 1).cgColor, UIColor(white: 0.45, alpha: 1).cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) {
+                g.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
+            }
+            for x in stride(from: CGFloat(0), to: size.width, by: 16) {
+                g.setFillColor(UIColor.black.withAlphaComponent(0.08).cgColor)
+                g.fill(CGRect(x: x, y: 0, width: 0.8, height: size.height))
+            }
+            for end in [CGFloat(0), size.width - 14] {
+                for i in 0..<4 {
+                    let x = end + CGFloat(i) * 4
+                    g.setFillColor((i % 2 == 0 ? UIColor.systemYellow : UIColor.black).cgColor)
+                    g.fill(CGRect(x: x, y: 0, width: 4, height: size.height))
+                }
+            }
+        }
+        return SKTexture(image: image)
+    }()
+
     /// Vertical gradient texture (top → bottom) for skies.
     static func verticalGradient(top: SKColor, bottom: SKColor, height: Int = 256) -> SKTexture {
         let size = CGSize(width: 4, height: height)
@@ -58,25 +207,15 @@ enum StarshipArt {
         bodyPath.addQuadCurve(to: CGPoint(x: w/2, y: h/2 - 18), control: CGPoint(x: 0, y: h/2 + 12))
         bodyPath.addLine(to: CGPoint(x: w/2, y: -h/2 + 5))
         bodyPath.closeSubpath()
-        ship.addChild(shape(bodyPath, fill: p.body, stroke: p.stroke, line: 1.5))
+        // Hull: cylindrical lighting + brushed-steel streaks, tinted by the livery
+        let hull = shape(bodyPath, fill: p.body, stroke: p.stroke, line: 1.2)
+        hull.fillTexture = hullTexture
+        ship.addChild(hull)
 
-        // Left-side reflection
-        let highlightPath = CGMutablePath()
-        highlightPath.move(to: CGPoint(x: -w/2 + 3, y: -h/2 + 8))
-        highlightPath.addLine(to: CGPoint(x: -w/2 + 3, y: h/2 - 20))
-        highlightPath.addLine(to: CGPoint(x: -w/2 + 7, y: h/2 - 22))
-        highlightPath.addLine(to: CGPoint(x: -w/2 + 7, y: -h/2 + 8))
-        highlightPath.closeSubpath()
-        ship.addChild(shape(highlightPath, fill: p.highlight))
-
-        // Right-side shadow
-        let shadowPath = CGMutablePath()
-        shadowPath.move(to: CGPoint(x: w/2 - 5, y: -h/2 + 7))
-        shadowPath.addLine(to: CGPoint(x: w/2 - 2, y: h/2 - 20))
-        shadowPath.addLine(to: CGPoint(x: w/2, y: h/2 - 18))
-        shadowPath.addLine(to: CGPoint(x: w/2, y: -h/2 + 6))
-        shadowPath.closeSubpath()
-        ship.addChild(shape(shadowPath, fill: p.shadow))
+        // Engine soot rising from the skirt
+        let soot = shape(bodyPath, fill: .white)
+        soot.fillTexture = sootTexture
+        ship.addChild(soot)
 
         // Heat-shield tile strip with seams
         let tilePanel = SKShapeNode(rectOf: CGSize(width: 7, height: 45), cornerRadius: 1.5)
@@ -92,7 +231,7 @@ enum StarshipArt {
         // Nose sheen
         let noseSheen = SKShapeNode(ellipseOf: CGSize(width: 11, height: 6))
         noseSheen.position = CGPoint(x: -3, y: h/2 - 16)
-        noseSheen.fillColor = SKColor.white.withAlphaComponent(0.22)
+        noseSheen.fillColor = p.highlight.withAlphaComponent(0.35)
         noseSheen.strokeColor = .clear
         ship.addChild(noseSheen)
 
@@ -100,7 +239,7 @@ enum StarshipArt {
         for yPos: CGFloat in [-22, -8, 8, 22] {
             ship.addChild(rect(CGSize(width: w - 4, height: 0.5), at: CGPoint(x: 0, y: yPos), fill: p.stroke.withAlphaComponent(0.5)))
         }
-        ship.addChild(rect(CGSize(width: 0.5, height: h * 0.6), at: CGPoint(x: 0, y: -2), fill: p.stroke.withAlphaComponent(0.3)))
+        ship.addChild(rect(CGSize(width: 0.5, height: h * 0.6), at: CGPoint(x: 0, y: -2), fill: p.shadow))
 
         // Livery accent stripe
         if let accent = p.accent {
@@ -212,6 +351,18 @@ enum StarshipArt {
         glow.alpha = 0
         glow.position = CGPoint(x: 0, y: nozzleExitY - 4)
         glow.zPosition = -1
+
+        // Shock diamonds (Mach disks) in the exhaust core
+        for (i, y) in [CGFloat(-16), -30, -43].enumerated() {
+            let diamond = SKSpriteNode(texture: softDot)
+            diamond.size = CGSize(width: 12 - CGFloat(i) * 2.5, height: 9 - CGFloat(i) * 1.5)
+            diamond.color = skin.palette.flameCore
+            diamond.colorBlendFactor = 1
+            diamond.blendMode = .add
+            diamond.alpha = 0.9 - CGFloat(i) * 0.22
+            diamond.position = CGPoint(x: 0, y: y)
+            glow.addChild(diamond)
+        }
         return glow
     }
 
@@ -234,7 +385,9 @@ enum StarshipArt {
     }
 
     private static func addFlap(_ path: CGPath, to ship: SKNode, palette p: ShipSkin.Palette, hingeX: CGFloat, hingeY: CGFloat, hingeHeight: CGFloat) {
-        ship.addChild(shape(path, fill: p.flap, stroke: p.stroke.withAlphaComponent(0.7), line: 1))
+        let flap = shape(path, fill: p.flap, stroke: p.stroke.withAlphaComponent(0.7), line: 1)
+        flap.fillTexture = flapTexture
+        ship.addChild(flap)
         let bevel = shape(path, fill: .clear, stroke: p.flapHighlight, line: 0.6)
         bevel.alpha = 0.75
         ship.addChild(bevel)
