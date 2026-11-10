@@ -7,6 +7,7 @@ on:
     branches:
       - main
       - "codex/**"
+      - "claude/**"
 
 jobs:
   test:
@@ -35,3 +36,42 @@ jobs:
           name: TestResults
           path: build/ci/TestResults.xcresult
           if-no-files-found: ignore
+
+  screenshots:
+    name: Simulator Screenshots
+    runs-on: macos-latest
+    timeout-minutes: 45
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Capture screenshots
+        run: Scripts/ci_screenshots.sh
+
+      - name: Publish screenshots to ci-screenshots branch
+        if: always()
+        run: |
+          set -e
+          [ -d build/screens ] || exit 0
+          BRANCH_DIR="$(echo "${GITHUB_REF_NAME}" | tr '/' '_')"
+          TMP="$(mktemp -d)"
+          cp build/screens/*.png "$TMP/" 2>/dev/null || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code origin ci-screenshots >/dev/null 2>&1; then
+            git fetch --depth 1 origin ci-screenshots
+            git checkout -B ci-screenshots FETCH_HEAD
+          else
+            git checkout --orphan ci-screenshots
+            git rm -rf --quiet . || true
+          fi
+          rm -rf "$BRANCH_DIR" && mkdir -p "$BRANCH_DIR"
+          cp "$TMP"/*.png "$BRANCH_DIR/"
+          echo "${GITHUB_SHA}" > "$BRANCH_DIR/COMMIT"
+          git add "$BRANCH_DIR"
+          git commit -m "Screenshots for ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}" || exit 0
+          git push origin ci-screenshots

@@ -25,7 +25,6 @@
 		C2000005 /* LevelDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000005 /* LevelDefinition.swift */; };
 		C2000006 /* CampaignState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000006 /* CampaignState.swift */; };
 		C2000019 /* LandingThresholds.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000019 /* LandingThresholds.swift */; };
-		C2000007 /* ShapeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000007 /* ShapeViews.swift */; };
 		C2000008 /* HUDViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000008 /* HUDViews.swift */; };
 		C2000009 /* ControlViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000009 /* ControlViews.swift */; };
 		C2000010 /* GameContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000010 /* GameContainerView.swift */; };
@@ -55,6 +54,14 @@
 		DC000001 /* DailyChallenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC100001 /* DailyChallenge.swift */; };
 		BS000001 /* BlueStarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BS100001 /* BlueStarManager.swift */; };
 		FT000001 /* Orbitron-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT100001 /* Orbitron-VariableFont_wght.ttf */; };
+		V2000001 /* ShipSkin.swift in Sources */ = {isa = PBXBuildFile; fileRef = V1000001 /* ShipSkin.swift */; };
+		V2000002 /* PilotProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = V1000002 /* PilotProgress.swift */; };
+		V2000003 /* StarshipArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = V1000003 /* StarshipArt.swift */; };
+		V2000004 /* GameScene+Juice.swift in Sources */ = {isa = PBXBuildFile; fileRef = V1000004 /* GameScene+Juice.swift */; };
+		V2000005 /* ProgressionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = V1000005 /* ProgressionViews.swift */; };
+		V2000006 /* HangarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = V1000006 /* HangarView.swift */; };
+		V2000007 /* PilotProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V1000007 /* PilotProgressTests.swift */; };
+		V2000008 /* ShipSkinTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V1000008 /* ShipSkinTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -87,7 +94,6 @@
 		C1000005 /* LevelDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelDefinition.swift; sourceTree = "<group>"; };
 		C1000006 /* CampaignState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CampaignState.swift; sourceTree = "<group>"; };
 		C1000019 /* LandingThresholds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandingThresholds.swift; sourceTree = "<group>"; };
-		C1000007 /* ShapeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeViews.swift; sourceTree = "<group>"; };
 		C1000008 /* HUDViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDViews.swift; sourceTree = "<group>"; };
 		C1000009 /* ControlViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlViews.swift; sourceTree = "<group>"; };
 		C1000010 /* GameContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameContainerView.swift; sourceTree = "<group>"; };
@@ -119,6 +125,14 @@
 		T1000008 /* ScoringHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoringHelper.swift; sourceTree = "<group>"; };
 		T1000010 /* LandingEvaluationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandingEvaluationTests.swift; sourceTree = "<group>"; };
 		T3000002 /* RocketLanderTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RocketLanderTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		V1000001 /* ShipSkin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShipSkin.swift; sourceTree = "<group>"; };
+		V1000002 /* PilotProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilotProgress.swift; sourceTree = "<group>"; };
+		V1000003 /* StarshipArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarshipArt.swift; sourceTree = "<group>"; };
+		V1000004 /* GameScene+Juice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GameScene+Juice.swift"; sourceTree = "<group>"; };
+		V1000005 /* ProgressionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionViews.swift; sourceTree = "<group>"; };
+		V1000006 /* HangarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HangarView.swift; sourceTree = "<group>"; };
+		V1000007 /* PilotProgressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilotProgressTests.swift; sourceTree = "<group>"; };
+		V1000008 /* ShipSkinTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShipSkinTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -152,6 +166,8 @@
 		A5000002 /* RocketLander */ = {
 			isa = PBXGroup;
 			children = (
+				V1000004 /* GameScene+Juice.swift */,
+				V1000003 /* StarshipArt.swift */,
 				A2000001 /* RocketLanderApp.swift */,
 				A2000002 /* ContentView.swift */,
 				A2000003 /* GameScene.swift */,
@@ -205,6 +221,8 @@
 		C3000001 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				V1000002 /* PilotProgress.swift */,
+				V1000001 /* ShipSkin.swift */,
 				C1000001 /* GameState.swift */,
 				C1000002 /* HighScoreManager.swift */,
 				C1000003 /* LandingPlatform.swift */,
@@ -222,7 +240,8 @@
 		C3000002 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				C1000007 /* ShapeViews.swift */,
+				V1000006 /* HangarView.swift */,
+				V1000005 /* ProgressionViews.swift */,
 				C1000008 /* HUDViews.swift */,
 				C1000009 /* ControlViews.swift */,
 				C1000010 /* GameContainerView.swift */,
@@ -247,6 +266,8 @@
 		T3000001 /* RocketLanderTests */ = {
 			isa = PBXGroup;
 			children = (
+				V1000008 /* ShipSkinTests.swift */,
+				V1000007 /* PilotProgressTests.swift */,
 				T1000001 /* ScoringTests.swift */,
 				T1000002 /* HighScoreManagerTests.swift */,
 				T1000003 /* CampaignStateTests.swift */,
@@ -372,6 +393,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				V2000006 /* HangarView.swift in Sources */,
+				V2000005 /* ProgressionViews.swift in Sources */,
+				V2000004 /* GameScene+Juice.swift in Sources */,
+				V2000003 /* StarshipArt.swift in Sources */,
+				V2000002 /* PilotProgress.swift in Sources */,
+				V2000001 /* ShipSkin.swift in Sources */,
 				A1000001 /* RocketLanderApp.swift in Sources */,
 				A1000002 /* ContentView.swift in Sources */,
 				A1000003 /* GameScene.swift in Sources */,
@@ -382,7 +409,6 @@
 				C2000004 /* LandingMessages.swift in Sources */,
 				C2000005 /* LevelDefinition.swift in Sources */,
 				C2000006 /* CampaignState.swift in Sources */,
-				C2000007 /* ShapeViews.swift in Sources */,
 				C2000008 /* HUDViews.swift in Sources */,
 				C2000009 /* ControlViews.swift in Sources */,
 				C2000010 /* GameContainerView.swift in Sources */,
@@ -409,6 +435,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				V2000008 /* ShipSkinTests.swift in Sources */,
+				V2000007 /* PilotProgressTests.swift in Sources */,
 				T2000001 /* ScoringTests.swift in Sources */,
 				T2000002 /* HighScoreManagerTests.swift in Sources */,
 				T2000003 /* CampaignStateTests.swift in Sources */,

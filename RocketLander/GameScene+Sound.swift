@@ -1,22 +1,22 @@
 import SpriteKit
 
 // MARK: - Sound Methods
+// Every sound respects the Sound setting (GameState.soundEnabled).
 extension GameScene {
 
     func startThrustSound() {
-        guard !isThrustSoundPlaying else { return }
+        guard gameState.soundEnabled, !isThrustSoundPlaying else { return }
 
         if let url = Bundle.main.url(forResource: "thrust", withExtension: "wav") {
-            thrustSound = SKAudioNode(url: url)
-            if let sound = thrustSound {
-                sound.autoplayLooped = true
-                addChild(sound)
-                sound.run(SKAction.sequence([
-                    SKAction.changeVolume(to: 0.5, duration: 0),
-                    SKAction.play()
-                ]))
-                isThrustSoundPlaying = true
-            }
+            let sound = SKAudioNode(url: url)
+            sound.autoplayLooped = true
+            addChild(sound)
+            sound.run(SKAction.sequence([
+                SKAction.changeVolume(to: 0.5, duration: 0),
+                SKAction.play()
+            ]))
+            thrustSound = sound
+            isThrustSoundPlaying = true
         }
     }
 
@@ -30,18 +30,23 @@ extension GameScene {
     }
 
     func playRotateSound() {
-        run(SKAction.playSoundFileNamed("rotate.wav", waitForCompletion: false))
+        play("rotate.wav")
     }
 
     func playSuccessSound() {
-        run(SKAction.playSoundFileNamed("land_success.wav", waitForCompletion: false))
+        play("land_success.wav")
     }
 
     func playExplosionSound() {
-        run(SKAction.playSoundFileNamed("explosion.wav", waitForCompletion: false))
+        play("explosion.wav")
     }
 
     func playChallengeFailSound() {
-        run(SKAction.playSoundFileNamed("challenge_fail.wav", waitForCompletion: false))
+        play("challenge_fail.wav")
+    }
+
+    private func play(_ file: String) {
+        guard gameState.soundEnabled else { return }
+        run(SKAction.playSoundFileNamed(file, waitForCompletion: false))
     }
 }

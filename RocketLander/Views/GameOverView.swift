@@ -160,6 +160,8 @@ struct GameOverView: View {
     @State private var showingHighScoreSheet = false
     @State private var crashMessage = crashMessages.randomElement()!
 
+    private static let lastPilotNameKey = "lastPilotName"
+
     // Pool of crash headlines — randomized each game over
     private static let crashMessages = [
         // SpaceX / rocket culture
@@ -393,6 +395,10 @@ struct GameOverView: View {
                     }
                 }
 
+                if let reward = gameState.flightReward {
+                    FlightRewardView(reward: reward)
+                }
+
                 // Daily Challenge result
                 if gameState.currentMode == .dailyChallenge {
                     dailyChallengeResultView
@@ -451,6 +457,10 @@ struct GameOverView: View {
                     speedBand: .fail
                 )
 
+                if let reward = gameState.flightReward {
+                    FlightRewardView(reward: reward)
+                }
+
                 // Global rank display on crash
                 if let rankText = leaderboardRankText {
                     HStack(spacing: 4) {
@@ -497,6 +507,11 @@ struct GameOverView: View {
         .onChange(of: gameState.landed) { _ in
             if isNewHighScore && !showingHighScoreSheet {
                 showingHighScoreSheet = true
+            }
+        }
+        .onChange(of: showingHighScoreSheet) { showing in
+            if showing && playerName.isEmpty {
+                playerName = UserDefaults.standard.string(forKey: Self.lastPilotNameKey) ?? ""
             }
         }
         .sheet(isPresented: $showingHighScoreSheet) {
@@ -656,6 +671,7 @@ struct GameOverView: View {
     private func saveScore() {
         let name = playerName.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return }
+        UserDefaults.standard.set(name, forKey: Self.lastPilotNameKey)
 
         if gameState.currentMode == .campaign {
             campaignState.addNamedScore(

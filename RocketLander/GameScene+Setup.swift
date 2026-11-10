@@ -3,22 +3,56 @@ import SpriteKit
 // MARK: - Scene Setup
 extension GameScene {
 
+    // MARK: - Sky
+
+    /// Per-planet sky color pair (classic mode uses the deep-space default).
+    var skyColors: (top: SKColor, bottom: SKColor) {
+        if gameState.currentMode.usesLevelDefinition,
+           let level = LevelDefinition.level(for: gameState.currentLevelId) {
+            return (level.skyColorTop, level.skyColorBottom)
+        }
+        return (SKColor(red: 0.0, green: 0.0, blue: 0.03, alpha: 1), SKColor(red: 0.05, green: 0.05, blue: 0.15, alpha: 1))
+    }
+
+    func createSky() {
+        let colors = skyColors
+        let sky = SKSpriteNode(texture: StarshipArt.verticalGradient(top: colors.top, bottom: colors.bottom))
+        sky.size = size
+        sky.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        sky.zPosition = -30
+        addChild(sky)
+
+        // Horizon glow — atmosphere scattering above the terrain line
+        let glow = SKSpriteNode(texture: StarshipArt.softDot)
+        glow.size = CGSize(width: size.width * 1.8, height: 260)
+        glow.position = CGPoint(x: size.width / 2, y: 230)
+        glow.color = colors.bottom.blended(with: .white, fraction: 0.35)
+        glow.colorBlendFactor = 1
+        glow.blendMode = .add
+        glow.alpha = 0.35
+        glow.zPosition = -12
+        addChild(glow)
+    }
+
     func createStarfield() {
-        // Create parallax star layers
+        // Fewer, dimmer stars under bright atmospheres (Venus, Titan, Mars)
+        let skyLuminance = skyColors.bottom.luminance
+        let visibility = max(0.12, 1.0 - skyLuminance * 2.2)
+
         for layer in 0..<3 {
             let starCount = 30 + layer * 20
-            let alpha = 0.3 + Double(layer) * 0.25
+            let alpha = (0.3 + Double(layer) * 0.25) * Double(visibility)
 
             for _ in 0..<starCount {
-                let star = SKShapeNode(circleOfRadius: CGFloat.random(in: 0.5...2.0))
-                star.fillColor = .white
-                star.strokeColor = .clear
+                let star = SKSpriteNode(texture: StarshipArt.softDot)
+                let diameter = CGFloat.random(in: 2.0...(4.0 + CGFloat(layer) * 1.5))
+                star.size = CGSize(width: diameter, height: diameter)
                 star.alpha = CGFloat(alpha * Double.random(in: 0.5...1.0))
                 star.position = CGPoint(
                     x: CGFloat.random(in: 0...size.width),
                     y: CGFloat.random(in: size.height * 0.3...size.height)
                 )
-                star.zPosition = -10 + CGFloat(layer)
+                star.zPosition = -20 + CGFloat(layer)
 
                 let twinkle = SKAction.sequence([
                     SKAction.fadeAlpha(to: CGFloat(alpha * 0.3), duration: Double.random(in: 0.5...2.0)),
@@ -29,6 +63,28 @@ extension GameScene {
                 addChild(star)
             }
         }
+
+        // Occasional shooting star on dark skies
+        guard visibility > 0.6 else { return }
+        let meteor = SKAction.sequence([
+            SKAction.wait(forDuration: 4, withRange: 6),
+            SKAction.run { [weak self] in self?.spawnShootingStar() }
+        ])
+        run(SKAction.repeatForever(meteor), withKey: "shootingStars")
+    }
+
+    private func spawnShootingStar() {
+        let streak = SKSpriteNode(color: .white, size: CGSize(width: 60, height: 1.5))
+        streak.alpha = 0
+        streak.zPosition = -9
+        let startX = CGFloat.random(in: size.width * 0.2...size.width)
+        let startY = CGFloat.random(in: size.height * 0.65...size.height * 0.95)
+        streak.position = CGPoint(x: startX, y: startY)
+        streak.zRotation = .pi * 0.88
+        addChild(streak)
+        let travel = SKAction.moveBy(x: -220, y: -70, duration: 0.7)
+        let fade = SKAction.sequence([SKAction.fadeAlpha(to: 0.8, duration: 0.1), SKAction.wait(forDuration: 0.35), SKAction.fadeOut(withDuration: 0.25)])
+        streak.run(SKAction.sequence([SKAction.group([travel, fade]), SKAction.removeFromParent()]))
     }
 
     func createCelestialBody() {
@@ -387,11 +443,42 @@ extension GameScene {
         }
     }
 
+    /// Hazy background ridge for depth. Decorative only (no physics).
+    func createDistantRidge() {
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: 0, y: 0))
+        var heights: [CGFloat] = []
+        var x: CGFloat = 0
+        while x <= size.width + 40 {
+            heights.append(CGFloat.random(in: 205...285))
+            x += 40
+        }
+        for _ in 0..<2 {
+            for i in 1..<max(2, heights.count - 1) {
+                heights[i] = (heights[i - 1] + heights[i] * 2 + heights[i + 1]) / 4
+            }
+        }
+        for (i, h) in heights.enumerated() {
+            path.addLine(to: CGPoint(x: CGFloat(i) * 40, y: h))
+        }
+        path.addLine(to: CGPoint(x: CGFloat(heights.count - 1) * 40, y: 0))
+        path.closeSubpath()
+
+        let base = gameState.currentMode.usesLevelDefinition
+            ? (LevelDefinition.level(for: gameState.currentLevelId)?.terrainColor ?? .gray)
+            : SKColor(red: 0.25, green: 0.2, blue: 0.15, alpha: 1.0)
+        let ridge = SKShapeNode(path: path)
+        ridge.fillColor = base.blended(with: skyColors.bottom, fraction: 0.6)
+        ridge.strokeColor = .clear
+        ridge.zPosition = -8
+        addChild(ridge)
+    }
+
     func createTerrain() {
         let terrainPath = CGMutablePath()
         terrainPath.move(to: CGPoint(x: 0, y: 0))
 
-        let segmentWidth: CGFloat = 20
+        let segmentWidth = terrainSegmentWidth
         var heights: [CGFloat] = []
         var x: CGFloat = 0
 
@@ -442,6 +529,8 @@ extension GameScene {
             heights[i] = (heights[i-1] + heights[i] + heights[i+1]) / 3
         }
 
+        terrainHeights = heights
+
         // Draw terrain
         x = 0
         for height in heights {
@@ -485,9 +574,11 @@ extension GameScene {
 
         addChild(terrain)
 
-        // For Ganymede (deep craters), add terrain physics + rock pillars
+        // Solid terrain on every world — touching it is a crash, not a fall-through
+        addTerrainPhysics(heights: heights, segmentWidth: segmentWidth)
+
+        // Ganymede (deep craters): rock pillars between platforms
         if gameState.currentMode.usesLevelDefinition && gameState.currentLevelId == 8 {
-            addTerrainPhysics(heights: heights, segmentWidth: segmentWidth)
             addGanymedeRocks()
         }
     }
@@ -683,248 +774,32 @@ extension GameScene {
     }
 
     func createRocket() {
-        rocket = SKNode()
+        rocket = StarshipArt.makeShip(skin: shipSkin)
         rocket.zPosition = 10
 
-        let bodyColor = SKColor(red: 0.82, green: 0.83, blue: 0.85, alpha: 1.0)
-        let bodyHighlight = SKColor(red: 0.88, green: 0.89, blue: 0.91, alpha: 1.0)
-        let bodyStroke = SKColor(red: 0.6, green: 0.6, blue: 0.63, alpha: 1.0)
-        let bodyShadow = SKColor(red: 0.45, green: 0.47, blue: 0.52, alpha: 0.55)
-        let flapColor = SKColor(red: 0.18, green: 0.18, blue: 0.2, alpha: 1.0)
-        let flapHighlight = SKColor(red: 0.34, green: 0.34, blue: 0.38, alpha: 0.9)
-        let flapStroke = SKColor(red: 0.3, green: 0.3, blue: 0.33, alpha: 1.0)
-        let darkMetal = SKColor(red: 0.15, green: 0.15, blue: 0.17, alpha: 1.0)
-        let heatShield = SKColor(red: 0.07, green: 0.075, blue: 0.085, alpha: 0.9)
+        let plume = StarshipArt.makeEnginePlume(skin: shipSkin)
+        plume.targetNode = self
+        rocket.addChild(plume)
+        enginePlume = plume
 
-        let bodyWidth: CGFloat = 26
-        let bodyHeight: CGFloat = 70
-
-        // Main body (cylindrical with dome nose)
-        let bodyPath = CGMutablePath()
-        bodyPath.move(to: CGPoint(x: -bodyWidth/2, y: -bodyHeight/2 + 5))
-        bodyPath.addLine(to: CGPoint(x: -bodyWidth/2, y: bodyHeight/2 - 18))
-        bodyPath.addQuadCurve(to: CGPoint(x: bodyWidth/2, y: bodyHeight/2 - 18),
-                              control: CGPoint(x: 0, y: bodyHeight/2 + 12))
-        bodyPath.addLine(to: CGPoint(x: bodyWidth/2, y: -bodyHeight/2 + 5))
-        bodyPath.addLine(to: CGPoint(x: -bodyWidth/2, y: -bodyHeight/2 + 5))
-        bodyPath.closeSubpath()
-
-        let body = SKShapeNode(path: bodyPath)
-        body.fillColor = bodyColor
-        body.strokeColor = bodyStroke
-        body.lineWidth = 1.5
-        rocket.addChild(body)
-
-        // Curved stainless-steel reflections
-        let highlightPath = CGMutablePath()
-        highlightPath.move(to: CGPoint(x: -bodyWidth/2 + 3, y: -bodyHeight/2 + 8))
-        highlightPath.addLine(to: CGPoint(x: -bodyWidth/2 + 3, y: bodyHeight/2 - 20))
-        highlightPath.addLine(to: CGPoint(x: -bodyWidth/2 + 7, y: bodyHeight/2 - 22))
-        highlightPath.addLine(to: CGPoint(x: -bodyWidth/2 + 7, y: -bodyHeight/2 + 8))
-        highlightPath.closeSubpath()
-        let highlight = SKShapeNode(path: highlightPath)
-        highlight.fillColor = bodyHighlight
-        highlight.strokeColor = .clear
-        rocket.addChild(highlight)
-
-        let shadowPath = CGMutablePath()
-        shadowPath.move(to: CGPoint(x: bodyWidth/2 - 5, y: -bodyHeight/2 + 7))
-        shadowPath.addLine(to: CGPoint(x: bodyWidth/2 - 2, y: bodyHeight/2 - 20))
-        shadowPath.addLine(to: CGPoint(x: bodyWidth/2, y: bodyHeight/2 - 18))
-        shadowPath.addLine(to: CGPoint(x: bodyWidth/2, y: -bodyHeight/2 + 6))
-        shadowPath.closeSubpath()
-        let shadow = SKShapeNode(path: shadowPath)
-        shadow.fillColor = bodyShadow
-        shadow.strokeColor = .clear
-        rocket.addChild(shadow)
-
-        // Heat shield tile strip, visible as the dark leeward side.
-        let tilePanel = SKShapeNode(rectOf: CGSize(width: 7, height: 45), cornerRadius: 1.5)
-        tilePanel.position = CGPoint(x: bodyWidth/2 - 4.5, y: -5)
-        tilePanel.fillColor = heatShield
-        tilePanel.strokeColor = SKColor.black.withAlphaComponent(0.35)
-        tilePanel.lineWidth = 0.4
-        rocket.addChild(tilePanel)
-
-        for yPos: CGFloat in stride(from: -23, through: 17, by: 8) {
-            let tileSeam = SKShapeNode(rectOf: CGSize(width: 6, height: 0.45))
-            tileSeam.position = CGPoint(x: bodyWidth/2 - 4.5, y: yPos)
-            tileSeam.fillColor = SKColor.white.withAlphaComponent(0.18)
-            tileSeam.strokeColor = .clear
-            rocket.addChild(tileSeam)
-        }
-
-        let noseSheen = SKShapeNode(ellipseOf: CGSize(width: 11, height: 6))
-        noseSheen.position = CGPoint(x: -3, y: bodyHeight/2 - 16)
-        noseSheen.fillColor = SKColor.white.withAlphaComponent(0.22)
-        noseSheen.strokeColor = .clear
-        rocket.addChild(noseSheen)
-
-        // Panel seam lines (horizontal)
-        for yPos: CGFloat in [-22, -8, 8, 22] {
-            let seam = SKShapeNode(rectOf: CGSize(width: bodyWidth - 4, height: 0.5))
-            seam.position = CGPoint(x: 0, y: yPos)
-            seam.fillColor = bodyStroke.withAlphaComponent(0.5)
-            seam.strokeColor = .clear
-            rocket.addChild(seam)
-        }
-
-        // Vertical panel seam (center)
-        let vSeam = SKShapeNode(rectOf: CGSize(width: 0.5, height: bodyHeight * 0.6))
-        vSeam.position = CGPoint(x: 0, y: -2)
-        vSeam.fillColor = bodyStroke.withAlphaComponent(0.3)
-        vSeam.strokeColor = .clear
-        rocket.addChild(vSeam)
-
-        // Forward flaps (larger, more angular)
-        for offset in [-1, 1] {
-            let flapPath = CGMutablePath()
-            let flapBaseY: CGFloat = 16
-            let flapTopY: CGFloat = 30
-            let flapInnerX = CGFloat(offset) * bodyWidth/2
-            let flapOuterX = CGFloat(offset) * (bodyWidth/2 + 16)
-            let flapOuterTipX = CGFloat(offset) * (bodyWidth/2 + 12)
-
-            flapPath.move(to: CGPoint(x: flapInnerX, y: flapBaseY))
-            flapPath.addLine(to: CGPoint(x: flapOuterX, y: flapBaseY - 3))
-            flapPath.addLine(to: CGPoint(x: flapOuterTipX, y: flapTopY))
-            flapPath.addLine(to: CGPoint(x: flapInnerX, y: flapTopY - 2))
-            flapPath.closeSubpath()
-
-            let flap = SKShapeNode(path: flapPath)
-            flap.fillColor = flapColor
-            flap.strokeColor = flapStroke
-            flap.lineWidth = 1
-            rocket.addChild(flap)
-
-            let flapBevel = SKShapeNode(path: flapPath)
-            flapBevel.fillColor = .clear
-            flapBevel.strokeColor = flapHighlight
-            flapBevel.lineWidth = 0.6
-            flapBevel.alpha = 0.75
-            rocket.addChild(flapBevel)
-
-            // Flap hinge detail
-            let hinge = SKShapeNode(rectOf: CGSize(width: 2, height: 12))
-            hinge.position = CGPoint(x: flapInnerX, y: (flapBaseY + flapTopY) / 2)
-            hinge.fillColor = flapStroke
-            hinge.strokeColor = .clear
-            rocket.addChild(hinge)
-        }
-
-        // Aft flaps (larger, more prominent)
-        for offset in [-1, 1] {
-            let flapPath = CGMutablePath()
-            let flapBaseY: CGFloat = -28
-            let flapTopY: CGFloat = -12
-            let flapInnerX = CGFloat(offset) * bodyWidth/2
-            let flapOuterX = CGFloat(offset) * (bodyWidth/2 + 18)
-            let flapOuterBottomX = CGFloat(offset) * (bodyWidth/2 + 14)
-
-            flapPath.move(to: CGPoint(x: flapInnerX, y: flapTopY))
-            flapPath.addLine(to: CGPoint(x: flapOuterX, y: flapTopY + 2))
-            flapPath.addLine(to: CGPoint(x: flapOuterBottomX, y: flapBaseY))
-            flapPath.addLine(to: CGPoint(x: flapInnerX, y: flapBaseY + 3))
-            flapPath.closeSubpath()
-
-            let flap = SKShapeNode(path: flapPath)
-            flap.fillColor = flapColor
-            flap.strokeColor = flapStroke
-            flap.lineWidth = 1
-            rocket.addChild(flap)
-
-            let flapBevel = SKShapeNode(path: flapPath)
-            flapBevel.fillColor = .clear
-            flapBevel.strokeColor = flapHighlight
-            flapBevel.lineWidth = 0.6
-            flapBevel.alpha = 0.75
-            rocket.addChild(flapBevel)
-
-            // Aft flap hinge
-            let hinge = SKShapeNode(rectOf: CGSize(width: 2, height: 14))
-            hinge.position = CGPoint(x: flapInnerX, y: (flapBaseY + flapTopY) / 2)
-            hinge.fillColor = flapStroke
-            hinge.strokeColor = .clear
-            rocket.addChild(hinge)
-        }
-
-        // Engine skirt (wider, tapered)
-        let enginePath = CGMutablePath()
-        enginePath.move(to: CGPoint(x: -bodyWidth/2, y: -bodyHeight/2 + 5))
-        enginePath.addLine(to: CGPoint(x: -bodyWidth/2 - 3, y: -bodyHeight/2 - 8))
-        enginePath.addLine(to: CGPoint(x: bodyWidth/2 + 3, y: -bodyHeight/2 - 8))
-        enginePath.addLine(to: CGPoint(x: bodyWidth/2, y: -bodyHeight/2 + 5))
-        enginePath.closeSubpath()
-
-        let engine = SKShapeNode(path: enginePath)
-        engine.fillColor = darkMetal
-        engine.strokeColor = flapStroke
-        engine.lineWidth = 1
-        rocket.addChild(engine)
-
-        let skirtRim = SKShapeNode(rectOf: CGSize(width: bodyWidth + 9, height: 1.5), cornerRadius: 0.75)
-        skirtRim.position = CGPoint(x: 0, y: -bodyHeight/2 + 3)
-        skirtRim.fillColor = SKColor(red: 0.58, green: 0.59, blue: 0.62, alpha: 0.9)
-        skirtRim.strokeColor = .clear
-        rocket.addChild(skirtRim)
-
-        // Engine nozzles (3 Raptor engines)
-        for i in -1...1 {
-            let nozzlePath = CGMutablePath()
-            let nx = CGFloat(i) * 8
-            let ny = -bodyHeight/2 - 5
-            nozzlePath.move(to: CGPoint(x: nx - 3, y: ny + 3))
-            nozzlePath.addLine(to: CGPoint(x: nx - 4, y: ny - 4))
-            nozzlePath.addLine(to: CGPoint(x: nx + 4, y: ny - 4))
-            nozzlePath.addLine(to: CGPoint(x: nx + 3, y: ny + 3))
-            nozzlePath.closeSubpath()
-
-            let nozzle = SKShapeNode(path: nozzlePath)
-            nozzle.fillColor = SKColor(red: 0.1, green: 0.1, blue: 0.12, alpha: 1.0)
-            nozzle.strokeColor = darkMetal
-            nozzle.lineWidth = 0.5
-            rocket.addChild(nozzle)
-
-            // Nozzle inner glow
-            let inner = SKShapeNode(circleOfRadius: 2)
-            inner.position = CGPoint(x: nx, y: ny - 1)
-            inner.fillColor = SKColor(red: 0.2, green: 0.2, blue: 0.22, alpha: 1.0)
-            inner.strokeColor = .clear
-            rocket.addChild(inner)
-        }
-
-        // Landing legs (sturdier)
-        for offset in [-1, 1] {
-            let legPath = CGMutablePath()
-            legPath.move(to: CGPoint(x: CGFloat(offset) * 8, y: -bodyHeight/2 + 2))
-            legPath.addLine(to: CGPoint(x: CGFloat(offset) * 22, y: -bodyHeight/2 - 18))
-            legPath.addLine(to: CGPoint(x: CGFloat(offset) * 25, y: -bodyHeight/2 - 17))
-            legPath.addLine(to: CGPoint(x: CGFloat(offset) * 12, y: -bodyHeight/2 + 4))
-            legPath.closeSubpath()
-
-            let leg = SKShapeNode(path: legPath)
-            leg.fillColor = SKColor(red: 0.45, green: 0.45, blue: 0.48, alpha: 1.0)
-            leg.strokeColor = flapStroke
-            leg.lineWidth = 1
-            rocket.addChild(leg)
-
-            // Foot pad
-            let foot = SKShapeNode(rectOf: CGSize(width: 8, height: 2.5), cornerRadius: 1)
-            foot.position = CGPoint(x: CGFloat(offset) * 23.5, y: -bodyHeight/2 - 18)
-            foot.fillColor = SKColor(red: 0.35, green: 0.35, blue: 0.38, alpha: 1.0)
-            foot.strokeColor = .clear
-            rocket.addChild(foot)
-        }
+        let glow = StarshipArt.makeEngineGlow(skin: shipSkin)
+        rocket.addChild(glow)
+        engineGlow = glow
+        isEngineLit = false
 
         // Position rocket — upper-left for multi-platform layout
-        let startX = size.width * 0.15
-        rocket.position = CGPoint(x: startX, y: size.height - 100)
+        rocket.position = CGPoint(x: size.width * 0.15, y: size.height - 100)
 
-        // Physics body
-        rocket.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 54, height: 85))
+        // Physics body covers hull + landing legs so the feet touch the pad
+        let bodyTop: CGFloat = 42
+        let bodyBottom = StarshipArt.feetBottomY
+        rocket.physicsBody = SKPhysicsBody(
+            rectangleOf: CGSize(width: 54, height: bodyTop - bodyBottom),
+            center: CGPoint(x: 0, y: (bodyTop + bodyBottom) / 2)
+        )
         rocket.physicsBody?.mass = 1.0
         rocket.physicsBody?.linearDamping = 0.0
-        rocket.physicsBody?.angularDamping = 0.7
+        rocket.physicsBody?.angularDamping = GameScene.freeAngularDamping
         rocket.physicsBody?.allowsRotation = true
         rocket.physicsBody?.categoryBitMask = rocketCategory
         rocket.physicsBody?.contactTestBitMask = platformCategory | groundCategory

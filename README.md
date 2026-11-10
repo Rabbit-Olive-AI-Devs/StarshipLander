@@ -2,7 +2,7 @@
 
 A physics-based rocket landing game for iOS, inspired by SpaceX Starship landings.
 
-**Version:** 2.2.1
+**Version:** 2.3.0
 **Platform:** iOS 15.0+
 **Language:** Swift 5.0
 **Frameworks:** SwiftUI, SpriteKit, CoreMotion, GameKit
@@ -34,6 +34,12 @@ Guide your Starship through a controlled descent and land safely on one of three
 - **Daily Challenge**: New challenge every UTC day, same worldwide. 75 rotating templates with 6 constraint types across all 10 planets. Auto-computed difficulty (1-5★). Countdown timer for timed challenges with time bonus scoring. Pre-challenge briefing screen. See [Daily Challenge Catalog](#daily-challenge-catalog) for full list.
 - **Blue Star Currency**: Earn through daily challenges (+1), streaks (+3 bonus at 5 days), and campaign milestones (10/20/30 stars)
 - **AdMob Integration**: Banner + interstitial ads with App Tracking Transparency support
+- **Pilot Rank (v2.3.0)**: 10 ranks from Cadet to Starship Legend. Every flight earns XP (bonuses for harder pads, clean landings, landing streaks, daily challenges); each promotion awards 5 Blue Stars
+- **Hangar (v2.3.0)**: 7 Starship paint schemes (Stainless, Night Ops, Red Planet, Lunar Gold, Europa Ice, Synthwave, Legend) unlocked with Blue Stars or by Pilot Rank; engine plume color matches the livery
+- **Cinematic Landing Camera (v2.3.0)**: smooth zoom toward the ship on final approach, camera shake on touchdown/explosions
+- **Flight Guidance (v2.3.0)**: descent guide line (green when both legs fit the pad below), on-ship ↓speed/altitude readout colored by the pad's limits, first-flight tips
+- **RCS Attitude Hold (v2.3.0)**: spin is damped when rotation input is released (requires fuel)
+- **Visual Overhaul (v2.3.0)**: per-planet sky gradients, horizon glow, hazy distant ridges, shooting stars, particle engine plume, ground dust, particle explosions with hull debris, touchdown dust and sparks
 
 ### Controls
 
@@ -99,7 +105,9 @@ StarshipLander/
 │   ├── ContentView.swift            # ContentView + MenuView (navigation root)
 │   ├── GameScene.swift              # Core update loop, physics, collision
 │   ├── GameScene+Setup.swift        # Starfield, terrain, platforms, rocket creation
-│   ├── GameScene+Effects.swift      # Explosions, flames, visual effects
+│   ├── GameScene+Effects.swift      # Engine plume, touchdown, explosions, level effects
+│   ├── GameScene+Juice.swift        # Landing camera, flight guidance, dust, hazard callouts, DEBUG autopilot
+│   ├── StarshipArt.swift            # Starship node + plume factory, particle textures, Hangar preview scene
 │   ├── GameScene+Sound.swift        # All sound methods
 │   ├── GameScene+Scoring.swift      # Score calculation, platform detection
 │   ├── BannerAdView.swift           # AdMob banner + ad config
@@ -115,14 +123,17 @@ StarshipLander/
 │   │   ├── LevelDefinition.swift    # 10 campaign level definitions
 │   │   ├── CampaignState.swift      # Campaign progress persistence
 │   │   ├── GameCenterManager.swift  # Game Center auth, leaderboards, achievements
-│   │   ├── BlueStarManager.swift    # Blue star currency (daily challenge + milestone rewards)
+│   │   ├── BlueStarManager.swift    # Blue star currency (earn + spend)
+│   │   ├── PilotProgress.swift      # Pilot Rank XP, landing streaks, flight stats
+│   │   ├── ShipSkin.swift           # Paint schemes + HangarManager (ownership/selection)
 │   │   └── DailyChallenge.swift     # Daily challenge spec, constraints, templates
 │   ├── Views/
 │   │   ├── GameContainerView.swift  # Game container + SpriteKit bridge
 │   │   ├── GameOverView.swift       # Game over screen with stars + final stats panel
 │   │   ├── HUDViews.swift           # Top HUD + velocity + tilt display
 │   │   ├── ControlViews.swift       # Bottom controls + buttons
-│   │   ├── ShapeViews.swift         # Rocket illustration shapes
+│   │   ├── HangarView.swift         # Hangar: browse, unlock, equip skins
+│   │   ├── ProgressionViews.swift   # Ship preview, Pilot Rank card, XP reward panel
 │   │   ├── LeaderboardView.swift     # Dedicated leaderboard screen
 │   │   ├── HowToPlayView.swift      # How to Play info sheet
 │   │   ├── LevelSelectView.swift    # Campaign level grid
@@ -146,6 +157,8 @@ StarshipLander/
 │   ├── LandingPlatformTests.swift     # Platform data verification (5 tests)
 │   ├── CrashDiagnosticTests.swift     # Crash classification + determinism (14 tests)
 │   ├── LandingEvaluationTests.swift   # Per-platform speed + tilt band tests (20 tests)
+│   ├── PilotProgressTests.swift       # Rank thresholds, XP formula, streaks, promotions
+│   ├── ShipSkinTests.swift            # Hangar ownership, rank unlocks, Blue Star spending
 │   └── ScoringHelper.swift            # Test-only scoring formula replica
 ├── Docs/
 │   ├── chats/                       # Session summaries (context restoration)
@@ -164,9 +177,13 @@ StarshipLander/
 │   ├── setup_game_center.py        # ASC API: create GC leaderboards + achievements + upload images
 │   ├── generate_achievement_icons.py # Achievement icon generator (Pillow)
 │   ├── app_store_metadata.json      # App Store metadata reference
-│   └── export_chat_transcripts.py   # Claude Code transcript exporter
+│   ├── export_chat_transcripts.py   # Claude Code transcript exporter
+│   ├── ci_xcodebuild.sh             # CI build + test
+│   ├── ci_screenshots.sh            # CI simulator screenshots (DEBUG launch args + autopilot)
+│   └── release_testflight.sh        # Archive + upload to TestFlight from a signed-in Mac
 ├── .github/
-│   └── pull_request_template.md     # PR checklist template
+│   ├── pull_request_template.md     # PR checklist template
+│   └── workflows/                   # ios-ci.yml (build/test/screenshots), testflight.yml (upload)
 ├── RocketLander.xcodeproj           # Xcode project
 ├── CLAUDE.md                        # Claude Code session guidelines
 ├── STATUS.md                        # Authoritative project snapshot
@@ -227,7 +244,8 @@ python3 Scripts/generate_sounds.py
 - Gravity: 2.0 units/frame²
 - Thrust power: 12.0 velocity/frame
 - Rotation power: 0.04 angular velocity/frame (buttons)
-- Angular damping: 0.7
+- Per-frame values are tuned at 60 fps and scaled by real elapsed time (v2.3.0), so frame drops no longer weaken thrust
+- Angular damping: 0.7 while rotating; 2.6 RCS attitude hold when rotation is released (v2.3.0)
 - Thrust vectoring: proportional lateral force when tilted while thrusting (0.15 factor)
 - Accelerometer sensitivity: 0.06 with 0.1 dead zone
 
@@ -431,6 +449,7 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 2.3.0 | Build 39 (TestFlight) | Mission Control update: Pilot Rank XP, Hangar skins, cinematic landing camera, flight guidance, RCS hold, visual overhaul, solid terrain, sound/haptics settings fix, frame-rate independent controls |
 | 2.2.1 | Build 38 Submitted | Campaign startup crash fix; local SSD Xcode and GitHub Actions CI verified; submitted for App Store review |
 | 2.2.0 | Build 37 Published | Daily Challenge, Blue Stars, interstitial ads, global rank on game-over; approved/distributed 2026-05-03 but affected by Campaign startup crash |
 | 2.1.1 | 2026-02-06 | Share card redesign: crash sharing, compact colored stats, App Store link |

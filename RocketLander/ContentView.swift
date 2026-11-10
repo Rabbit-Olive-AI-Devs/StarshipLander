@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var showingLevelSelect = false
     @State private var showingLeaderboard = false
     @State private var showingDailyBriefing = false
+    @State private var showingHangar = false
     @StateObject private var highScoreManager = HighScoreManager()
     @StateObject private var campaignState = CampaignState()
     @StateObject private var gameState = GameState()
@@ -44,6 +45,13 @@ struct ContentView: View {
                     showingLevelSelect: $showingLevelSelect,
                     gameCenterManager: gameCenterManager
                 )
+            } else if showingHangar {
+                HangarView(
+                    showingHangar: $showingHangar,
+                    hangar: HangarManager.shared,
+                    blueStars: BlueStarManager.shared,
+                    progress: PilotProgress.shared
+                )
             } else if showingDailyBriefing {
                 DailyChallengeBriefingView(
                     gameState: gameState,
@@ -58,6 +66,7 @@ struct ContentView: View {
                     showingLevelSelect: $showingLevelSelect,
                     showingLeaderboard: $showingLeaderboard,
                     showingDailyBriefing: $showingDailyBriefing,
+                    showingHangar: $showingHangar,
                     highScoreManager: highScoreManager,
                     campaignState: campaignState,
                     gameState: gameState,
@@ -68,25 +77,59 @@ struct ContentView: View {
         .preferredColorScheme(.dark)
         .onAppear {
             gameCenterManager.authenticate()
+            #if DEBUG
+            applyDebugLaunch()
+            #endif
         }
     }
 }
+
+#if DEBUG
+extension ContentView {
+    private func applyDebugLaunch() {
+        switch DebugLaunch.value("-screen") {
+        case "hangar":
+            showingHangar = true
+        case "game":
+            switch DebugLaunch.value("-mode") {
+            case "campaign":
+                gameState.currentMode = .campaign
+                gameState.currentLevelId = Int(DebugLaunch.value("-level") ?? "1") ?? 1
+            case "daily":
+                gameState.currentMode = .dailyChallenge
+                gameState.currentLevelId = DailyChallenge.level.id
+                gameState.dailyChallengeTargetPlatform = DailyChallenge.targetPlatform
+            default:
+                gameState.currentMode = .classic
+            }
+            gameState.reset()
+            showingGame = true
+        default:
+            break
+        }
+    }
+}
+#endif
 
 struct MenuView: View {
     @Binding var showingGame: Bool
     @Binding var showingLevelSelect: Bool
     @Binding var showingLeaderboard: Bool
     @Binding var showingDailyBriefing: Bool
+    @Binding var showingHangar: Bool
     @ObservedObject var highScoreManager: HighScoreManager
     @ObservedObject var campaignState: CampaignState
     @ObservedObject var gameState: GameState
     @ObservedObject var gameCenterManager: GameCenterManager
+    @ObservedObject private var pilotProgress = PilotProgress.shared
+    @ObservedObject private var hangar = HangarManager.shared
+    @ObservedObject private var blueStars = BlueStarManager.shared
     @State private var showingHowToPlay = false
     @State private var showingSettings = false
 
     var body: some View {
         ScrollView {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             // Top bar — version left, settings/help right
             HStack {
                 Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")")
@@ -111,7 +154,7 @@ struct MenuView: View {
             // Title — chrome metallic effect
             VStack(spacing: 2) {
                 Text("STARSHIP")
-                    .font(.custom("Orbitron", size: 38).weight(.black))
+                    .font(.custom("Orbitron", size: 32).weight(.black))
                     .tracking(6)
                     .padding(.leading, 6)
                     .foregroundStyle(
@@ -130,7 +173,7 @@ struct MenuView: View {
                     .shadow(color: .black.opacity(0.8), radius: 4, y: 3)
 
                 Text("LANDER")
-                    .font(.custom("Orbitron", size: 38).weight(.black))
+                    .font(.custom("Orbitron", size: 32).weight(.black))
                     .tracking(10)
                     .padding(.leading, 10)
                     .foregroundStyle(
@@ -149,124 +192,18 @@ struct MenuView: View {
                     .shadow(color: .black.opacity(0.8), radius: 4, y: 3)
             }
 
-            // Rocket illustration
-            RocketIllustration()
-                .frame(width: 60, height: 85)
+            // Equipped Starship (tap to open the Hangar)
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.3)) { showingHangar = true }
+            }) {
+                ShipPreviewView(skin: hangar.selectedSkin)
+                    .frame(width: 76, height: 110)
+            }
+            .buttonStyle(.plain)
 
-            // Top Pilots leaderboard card
-            if !highScoreManager.scores.isEmpty {
-                VStack(spacing: 8) {
-                    // Header
-                    HStack {
-                        Image(systemName: "trophy.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(.yellow)
-                        Text("TOP PILOTS")
-                            .font(.custom("Orbitron", size: 13).weight(.bold))
-                            .foregroundColor(.orange)
-                        Image(systemName: "trophy.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(.yellow)
-                    }
-
-                    // Score rows (up to 3)
-                    ForEach(Array(highScoreManager.scores.prefix(3).enumerated()), id: \.element.id) { index, entry in
-                        HStack {
-                            Text("\(index + 1).")
-                                .font(.system(size: 16, weight: .bold, design: .monospaced))
-                                .foregroundColor(.yellow)
-                                .frame(width: 28, alignment: .trailing)
-                            Text(entry.name)
-                                .font(.custom("Orbitron", size: 14).weight(.bold))
-                                .foregroundColor(.white)
-                                .lineLimit(1)
-                            HStack(spacing: 1) {
-                                ForEach(0..<entry.stars, id: \.self) { _ in
-                                    Image(systemName: "star.fill")
-                                        .font(.system(size: 10))
-                                        .foregroundColor(.yellow)
-                                }
-                            }
-                            Spacer()
-                            Text("\(entry.score)")
-                                .font(.system(size: 16, weight: .bold, design: .monospaced))
-                                .foregroundColor(.orange)
-                        }
-                    }
-
-                    // Global Leaderboards link
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showingLeaderboard = true
-                        }
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "globe.americas.fill")
-                                .font(.system(size: 11))
-                                .foregroundColor(.gray)
-                            Text("Global Leaderboards")
-                                .font(.custom("Orbitron", size: 10).weight(.medium))
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.top, 2)
-                }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 14)
-                .background(Color.white.opacity(0.06))
-                .cornerRadius(14)
+            // Pilot rank + XP
+            PilotRankCard(progress: pilotProgress)
                 .frame(maxWidth: 300)
-            }
-
-            // Stats row — stars, blue stars, rank, streak
-            HStack(spacing: 16) {
-                if campaignState.totalStars > 0 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(.yellow)
-                        Text("\(campaignState.totalStars)/30 Stars")
-                            .font(.custom("Orbitron", size: 13).weight(.bold))
-                            .foregroundColor(.yellow)
-                    }
-                }
-
-                if BlueStarManager.shared.blueStars > 0 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(.cyan)
-                        Text("\(BlueStarManager.shared.blueStars)")
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
-                            .foregroundColor(.cyan)
-                    }
-                }
-
-                if BlueStarManager.shared.currentStreak > 0 && BlueStarManager.shared.isStreakActive {
-                    HStack(spacing: 4) {
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(.orange)
-                        Text("\(BlueStarManager.shared.currentStreak)d")
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
-                            .foregroundColor(.orange)
-                    }
-                }
-            }
-
-            if gameCenterManager.isAuthenticated, let rank = gameCenterManager.galaxyRank {
-                HStack(spacing: 4) {
-                    Image(systemName: "globe.americas.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(.cyan)
-                    Text("Galaxy Rank: #\(rank)")
-                        .font(.custom("Orbitron", size: 13).weight(.bold))
-                        .foregroundColor(.cyan)
-                }
-            }
-
-            Spacer().frame(height: 8)
 
             // Play buttons card
             VStack(spacing: 10) {
@@ -364,6 +301,30 @@ struct MenuView: View {
                     .cornerRadius(14)
                     .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
                 }
+
+                // Hangar
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showingHangar = true
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "paintbrush.fill")
+                        Text("HANGAR")
+                        Spacer()
+                        Text("\(hangar.ownedSkins.count)/\(ShipSkin.allCases.count)")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .opacity(0.8)
+                    }
+                    .font(.custom("Orbitron", size: 15).weight(.bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(Color.white.opacity(0.08))
+                    .cornerRadius(14)
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.15), lineWidth: 1))
+                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
@@ -371,6 +332,118 @@ struct MenuView: View {
             .cornerRadius(18)
             .frame(maxWidth: 300)
 
+            // Top Pilots leaderboard card
+            if !highScoreManager.scores.isEmpty {
+                VStack(spacing: 8) {
+                    // Header
+                    HStack {
+                        Image(systemName: "trophy.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.yellow)
+                        Text("TOP PILOTS")
+                            .font(.custom("Orbitron", size: 13).weight(.bold))
+                            .foregroundColor(.orange)
+                        Image(systemName: "trophy.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.yellow)
+                    }
+
+                    // Score rows (up to 3)
+                    ForEach(Array(highScoreManager.scores.prefix(3).enumerated()), id: \.element.id) { index, entry in
+                        HStack {
+                            Text("\(index + 1).")
+                                .font(.system(size: 16, weight: .bold, design: .monospaced))
+                                .foregroundColor(.yellow)
+                                .frame(width: 28, alignment: .trailing)
+                            Text(entry.name)
+                                .font(.custom("Orbitron", size: 14).weight(.bold))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                            HStack(spacing: 1) {
+                                ForEach(0..<entry.stars, id: \.self) { _ in
+                                    Image(systemName: "star.fill")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.yellow)
+                                }
+                            }
+                            Spacer()
+                            Text("\(entry.score)")
+                                .font(.system(size: 16, weight: .bold, design: .monospaced))
+                                .foregroundColor(.orange)
+                        }
+                    }
+
+                    // Global Leaderboards link
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showingLeaderboard = true
+                        }
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "globe.americas.fill")
+                                .font(.system(size: 11))
+                                .foregroundColor(.gray)
+                            Text("Global Leaderboards")
+                                .font(.custom("Orbitron", size: 10).weight(.medium))
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 2)
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 14)
+                .background(Color.white.opacity(0.06))
+                .cornerRadius(14)
+                .frame(maxWidth: 300)
+            }
+
+            // Stats row — stars, blue stars, rank, streak
+            HStack(spacing: 16) {
+                if campaignState.totalStars > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.yellow)
+                        Text("\(campaignState.totalStars)/30 Stars")
+                            .font(.custom("Orbitron", size: 13).weight(.bold))
+                            .foregroundColor(.yellow)
+                    }
+                }
+
+                if blueStars.blueStars > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.cyan)
+                        Text("\(blueStars.blueStars)")
+                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .foregroundColor(.cyan)
+                    }
+                }
+
+                if blueStars.currentStreak > 0 && blueStars.isStreakActive {
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.orange)
+                        Text("\(blueStars.currentStreak)d")
+                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .foregroundColor(.orange)
+                    }
+                }
+            }
+
+            if gameCenterManager.isAuthenticated, let rank = gameCenterManager.galaxyRank {
+                HStack(spacing: 4) {
+                    Image(systemName: "globe.americas.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.cyan)
+                    Text("Galaxy Rank: #\(rank)")
+                        .font(.custom("Orbitron", size: 13).weight(.bold))
+                        .foregroundColor(.cyan)
+                }
+            }
         }
         .padding(.horizontal)
         .padding(.bottom, 8)

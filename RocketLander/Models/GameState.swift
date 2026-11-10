@@ -61,6 +61,10 @@ class GameState: ObservableObject {
     @Published var dailyRewardResult: DailyRewardResult? = nil
     @Published var campaignMilestoneRewards: [CampaignMilestoneReward] = []
 
+    // Flight lifecycle + Pilot Rank reward for the flight that just ended
+    @Published var flightStarted: Bool = false
+    @Published var flightReward: FlightReward? = nil
+
     // Settings
     @Published var useAccelerometer: Bool {
         didSet {
@@ -75,6 +79,7 @@ class GameState: ObservableObject {
     @Published var hapticsEnabled: Bool {
         didSet {
             UserDefaults.standard.set(hapticsEnabled, forKey: "hapticsEnabled")
+            HapticManager.shared.isEnabled = hapticsEnabled
         }
     }
 
@@ -91,6 +96,7 @@ class GameState: ObservableObject {
         } else {
             self.hapticsEnabled = UserDefaults.standard.bool(forKey: "hapticsEnabled")
         }
+        HapticManager.shared.isEnabled = hapticsEnabled
     }
 
     func reset() {
@@ -122,6 +128,8 @@ class GameState: ObservableObject {
         elapsedTime = 0
         dailyRewardResult = nil
         campaignMilestoneRewards = []
+        flightStarted = false
+        flightReward = nil
         // Note: dailyChallengeTargetPlatform is NOT reset here — it persists
         // across retries, same as currentMode and currentLevelId.
     }

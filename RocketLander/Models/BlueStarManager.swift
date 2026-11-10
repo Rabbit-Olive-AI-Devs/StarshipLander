@@ -115,6 +115,24 @@ class BlueStarManager: ObservableObject {
         return newRewards
     }
 
+    // MARK: - Spending & Awards
+
+    /// Spends Blue Stars (Hangar purchases). Returns false when the balance is too low.
+    @discardableResult
+    func spend(_ amount: Int) -> Bool {
+        guard amount > 0, blueStars >= amount else { return false }
+        blueStars -= amount
+        save()
+        return true
+    }
+
+    /// Awards Blue Stars outside Daily Challenge / campaign milestones (Pilot Rank promotions).
+    func award(_ amount: Int) {
+        guard amount > 0 else { return }
+        blueStars += amount
+        save()
+    }
+
     // MARK: - Streak Info
 
     /// Whether the streak is still active (completed yesterday or today)
