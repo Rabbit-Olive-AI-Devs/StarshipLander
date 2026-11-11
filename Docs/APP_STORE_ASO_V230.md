@@ -46,7 +46,7 @@ ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v230.py            # 
 ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v230.py --apply --submit
 ```
 
-The script creates version 2.3.0, sets name, subtitle, copy, keywords and review notes, attaches Build 39 (refuses if the build is not `VALID`), replaces the screenshots, and with `--submit` sends it for review. Release type is "after approval", so it goes live automatically once Apple approves.
+The script first checks that Build 39 is `VALID` and the screenshot files are present (dry run included) and changes nothing if either fails. It then creates version 2.3.0, sets name, subtitle, copy, keywords and review notes, attaches Build 39, replaces the screenshots, and with `--submit` sends it for review. Any failed call stops the script; nothing is retried. An approved version is held for manual release unless `--auto-release` is passed.
 
 ## Virality notes (not in this release)
 

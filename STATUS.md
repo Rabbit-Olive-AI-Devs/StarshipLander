@@ -77,7 +77,7 @@ v2.2.0 adds three pillars: (1) Daily Challenge system with 75 templates, auto-co
 
 ## Immediate Next Tasks (ordered)
 
-0. **v2.3.0**: ~~upload Build 39~~ (done 2026-11-10). Next: confirm processing + TestFlight availability in App Store Connect; device-test (RCS hold, landing camera, Hangar, sound/haptics toggles, campaign startup on Earth/Venus); merge PR #4. **Submit**: on the Mac that holds the App Store Connect API key run `ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v230.py --apply --submit` from branch `claude/v230-store-listing` (dry run first without flags). It applies the new listing, attaches Build 39 and submits; release type is "after approval". Do not re-upload Build 39.
+0. **v2.3.0**: ~~upload Build 39~~ (done 2026-11-10). Next: confirm processing + TestFlight availability in App Store Connect; device-test (RCS hold, landing camera, Hangar, sound/haptics toggles, campaign startup on Earth/Venus); merge PR #4. **Submit**: on the Mac that holds the App Store Connect API key run `ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v230.py --apply --submit` from branch `claude/v230-store-listing` (dry run first without flags). It checks Build 39 first, applies the new listing, attaches the build and submits; approved versions are held for manual release unless `--auto-release` is added. Do not re-upload Build 39.
 
 1. Monitor v2.2.1 Build 38 review status until approved/distributed.
 2. Verify the replacement App Store/TestFlight build on device as soon as Apple makes it available.

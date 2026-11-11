@@ -7,6 +7,10 @@ screenshots, Build 39, and (with --submit) the review submission.
   ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v230.py --apply
   ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v230.py --apply --submit
 
+Build 39 and the screenshot files are checked before anything is changed, in the
+dry run too. Any failed call stops the script; nothing is retried. Approved
+versions are held for manual release unless --auto-release is passed.
+
 It does not store credentials. It reads the .p8 key from
 ~/.appstoreconnect/private_keys/AuthKey_*.p8 or ASC_KEY_ID/ASC_PRIVATE_KEY.
 """
@@ -15,7 +19,6 @@ import argparse
 import glob
 import os
 import sys
-import time
 from pathlib import Path
 
 import requests
@@ -175,18 +178,18 @@ def get_or_create_version(headers, app_id, apply):
     return version_id
 
 
-def patch_version(headers, version_id, apply):
+def patch_version(headers, version_id, apply, release_type):
     body = {
         "data": {
             "type": "appStoreVersions",
             "id": version_id,
             "attributes": {
                 "copyright": "2026 Rabbit & Olive Studios",
-                "releaseType": "AFTER_APPROVAL",
+                "releaseType": release_type,
             },
         }
     }
-    print("Updating version-level copyright/releaseType")
+    print(f"Updating version-level copyright; releaseType={release_type}")
     if apply:
         request_json(headers, "PATCH", f"/v1/appStoreVersions/{version_id}", json=body)
 
@@ -429,24 +432,11 @@ def upload_screenshot(headers, set_id, path, apply):
         offset = op.get("offset", 0)
         length = op.get("length", len(data))
         chunk = data[offset : offset + length]
-        last_error = None
-        for attempt in range(1, 7):
-            try:
-                response = requests.request(method, url, headers=op_headers, data=chunk, timeout=120)
-                if response.status_code < 400:
-                    last_error = None
-                    break
-                last_error = RuntimeError(
-                    f"Binary upload failed for {path.name}: {response.status_code}\n{response.text[:500]}"
-                )
-            except requests.RequestException as exc:
-                last_error = exc
-
-            wait = min(5 * attempt, 20)
-            print(f"  Upload attempt {attempt}/6 failed for {path.name}; retrying in {wait}s")
-            time.sleep(wait)
-        if last_error:
-            raise RuntimeError(f"Binary upload failed for {path.name} after retries: {last_error}")
+        response = requests.request(method, url, headers=op_headers, data=chunk, timeout=120)
+        if response.status_code >= 400:
+            raise RuntimeError(
+                f"Binary upload failed for {path.name}: {response.status_code}\n{response.text[:500]}"
+            )
 
     body = {
         "data": {
@@ -514,15 +504,8 @@ def submit_for_review(headers, app_id, version_id, apply):
                 },
             }
         }
-        try:
-            item = request_json(headers, "POST", "/v1/reviewSubmissionItems", expected=(201,), json=body)["data"]
-            print(f"Created review submission item id={item['id']}")
-        except RuntimeError as exc:
-            text = str(exc)
-            if "409" in text:
-                print("Review submission item already exists")
-            else:
-                raise
+        item = request_json(headers, "POST", "/v1/reviewSubmissionItems", expected=(201,), json=body)["data"]
+        print(f"Created review submission item id={item['id']}")
 
         body = {
             "data": {
@@ -547,6 +530,11 @@ def main():
     parser.add_argument("--apply", action="store_true", help="Make changes in App Store Connect")
     parser.add_argument("--skip-screenshots", action="store_true")
     parser.add_argument("--submit", action="store_true", help="Submit the prepared version for App Store review")
+    parser.add_argument(
+        "--auto-release",
+        action="store_true",
+        help="Publish automatically once Apple approves. Default: hold for manual release.",
+    )
     args = parser.parse_args()
 
     check_limits()
@@ -560,11 +548,16 @@ def main():
     app_id = get_app_id(headers)
 
     print("Mode:", "APPLY" if args.apply else "DRY RUN")
+    # Read-only checks first: nothing in App Store Connect changes unless these pass.
+    build_id = find_build(headers, app_id)
+    if not args.skip_screenshots:
+        screenshot_paths()
+    release_type = "AFTER_APPROVAL" if args.auto_release else "MANUAL"
     version_id = get_or_create_version(headers, app_id, args.apply)
     if not version_id:
         print("Dry run complete before version creation")
         return
-    patch_version(headers, version_id, args.apply)
+    patch_version(headers, version_id, args.apply, release_type)
     loc_id = get_or_create_localization(headers, version_id, args.apply)
     if not loc_id:
         print("Dry run complete before localization creation")
@@ -572,7 +565,6 @@ def main():
     patch_localization(headers, loc_id, args.apply)
     patch_app_info(headers, app_id, args.apply)
     patch_review_notes(headers, version_id, args.apply)
-    build_id = find_build(headers, app_id)
     attach_build(headers, version_id, build_id, args.apply)
     if not args.skip_screenshots:
         upload_screenshots(headers, loc_id, args.apply)
