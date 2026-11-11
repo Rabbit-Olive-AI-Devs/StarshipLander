@@ -231,22 +231,38 @@ extension GameScene {
 }
 
 #if DEBUG
-// MARK: - Debug Autopilot (CI screenshots / physics smoke test)
+// MARK: - Debug Autopilot (CI screenshots / store captures)
 extension GameScene {
-    /// Simple descent controller: hold attitude upright and keep descent speed
-    /// proportional to altitude. Lands on whatever pad is below the start point.
+    /// Scripted descent used for CI and App Store captures: flies the ship to the
+    /// pad chosen with `-pad a|b|c` (default b) on a fixed descent profile. It sets
+    /// velocity directly so the flight is identical at any simulator frame rate.
     func runAutopilot() {
         guard hasStarted else {
             gameState.isThrusting = true
             return
         }
-        let vy = rocket.physicsBody?.velocity.dy ?? 0
-        let targetDescent = max(12, min(90, altitudeAboveSurface() * 0.3))
-        gameState.isThrusting = -vy > targetDescent
+        guard let body = rocket.physicsBody else { return }
 
-        let correction = rocket.zRotation + (rocket.physicsBody?.angularVelocity ?? 0) * 0.4
-        gameState.isRotatingRight = correction > 0.012
-        gameState.isRotatingLeft = correction < -0.012
+        let altitude = altitudeAboveSurface()
+        let targetDescent = max(28, min(300, altitude * 1.4))
+        let burning = altitude < 260
+        gameState.isThrusting = burning
+        gameState.isRotatingLeft = false
+        gameState.isRotatingRight = false
+
+        var velocity = body.velocity
+        if burning || -velocity.dy > targetDescent {
+            velocity.dy = -targetDescent
+        }
+
+        let padIndex = ["a": 0, "b": 1, "c": 2][DebugLaunch.value("-pad") ?? "b"] ?? 1
+        if platforms.indices.contains(padIndex) {
+            let offset = platforms[padIndex].position.x - rocket.position.x
+            velocity.dx = max(-90, min(90, offset * 1.2))
+            rocket.zRotation = altitude > 40 ? max(-0.2, min(0.2, -offset * 0.003)) : 0
+        }
+        body.velocity = velocity
+        body.angularVelocity = 0
     }
 }
 #endif

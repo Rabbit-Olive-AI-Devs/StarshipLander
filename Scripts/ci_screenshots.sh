@@ -43,27 +43,53 @@ shoot() { # name delay args...
   echo "captured $name"
 }
 
-shoot_sequence() { # prefix "t1 t2 ..." args...
-  local prefix="$1" times="$2"; shift 2
+# Saved-game state for store-quality captures, passed as launch arguments
+# (UserDefaults argument domain), so nothing is written to the simulator.
+hex_json() { python3 -c 'import sys; print("<" + sys.argv[1].encode().hex() + ">")' "$1"; }
+SCORES='[{"name":"Thiago","score":18420,"stars":3},{"name":"Nova","score":16950,"stars":3},{"name":"Orion","score":15280,"stars":2}]'
+CAMPAIGN="$(python3 -c '
+import json
+top = [{"name": n, "score": s, "stars": 3} for n, s in (("Thiago", 19100), ("Nova", 18800), ("Orion", 18650))]
+levels = range(1, 11)
+print(json.dumps({
+    "unlockedLevels": list(levels),
+    "starsByLevel": {str(i): (3 if i < 7 else 2 if i < 10 else 1) for i in levels},
+    "scoresByLevel": {str(i): top for i in levels},
+    "personalBestScoresByLevel": {str(i): 19100 - i * 420 for i in levels},
+}))')"
+PROGRESS='{"xp":2650,"landingStreak":6,"bestLandingStreak":11,"totalFlights":212,"totalLandings":148}'
+STATE=(
+  -topScores "$(hex_json "$SCORES")"
+  -campaignState "$(hex_json "$CAMPAIGN")"
+  -pilotProgress.v1 "$(hex_json "$PROGRESS")"
+  -blueStars 185
+  -lastPilotName Thiago
+  -hangarOwnedSkins "(stainless,nightOps,redPlanet,lunarGold,europaIce,synthwave)"
+)
+
+burst() { # prefix frames args...
+  local prefix="$1" frames="$2"; shift 2
   xcrun simctl terminate "$SIM_ID" "$BUNDLE_ID" >/dev/null 2>&1 || true
   xcrun simctl launch "$SIM_ID" "$BUNDLE_ID" "$@" >/dev/null
-  local elapsed=0
-  for t in $times; do
-    sleep $((t - elapsed)); elapsed=$t
-    xcrun simctl io "$SIM_ID" screenshot "$OUT/${prefix}_${t}s.png" >/dev/null
-    echo "captured ${prefix}_${t}s"
+  sleep 2
+  for i in $(seq -w 1 "$frames"); do
+    xcrun simctl io "$SIM_ID" screenshot "$OUT/${prefix}_f${i}.png" >/dev/null
+    sleep 0.5
   done
+  echo "captured $prefix x$frames"
 }
 
 # Warm-up launch (first launch is slow on CI)
 shoot 00_warmup 12 -screen menu
-shoot 01_menu 5 -screen menu
-shoot 02_hangar 5 -screen hangar
-shoot 03_preflight_mars 5 -screen game -mode campaign -level 2
-shoot_sequence 04_classic_autopilot "6 10 14 18" -screen game -mode classic -autopilot
-shoot_sequence 05_europa_autopilot "5 9 13" -screen game -mode campaign -level 4 -autopilot
-shoot_sequence 06_jupiter_autopilot "4 8" -screen game -mode campaign -level 10 -autopilot
-shoot 07_venus 5 -screen game -mode campaign -level 6
-shoot 08_daily 5 -screen game -mode daily
+shoot 01_menu 6 -screen menu "${STATE[@]}" -hangarSelectedSkin lunarGold
+shoot 02_hangar 6 -screen hangar "${STATE[@]}" -hangarSelectedSkin synthwave
+shoot 03_levels 6 -screen levels "${STATE[@]}"
+shoot 04_daily 6 -screen game -mode daily "${STATE[@]}" -hangarSelectedSkin europaIce
+burst 10_classic 18 -screen game -mode classic -autopilot -pad b "${STATE[@]}" -hangarSelectedSkin stainless
+burst 11_mars 16 -screen game -mode campaign -level 2 -autopilot -pad c "${STATE[@]}" -hangarSelectedSkin redPlanet
+burst 12_jupiter 16 -screen game -mode campaign -level 10 -autopilot -pad b "${STATE[@]}" -hangarSelectedSkin synthwave
+burst 13_europa 16 -screen game -mode campaign -level 4 -autopilot -pad a "${STATE[@]}" -hangarSelectedSkin europaIce
+burst 14_io 16 -screen game -mode campaign -level 9 -autopilot -pad c "${STATE[@]}" -hangarSelectedSkin nightOps
+burst 15_moon 16 -screen game -mode campaign -level 1 -autopilot -pad b "${STATE[@]}" -hangarSelectedSkin lunarGold
 rm -f "$OUT/00_warmup.png"
 ls -la "$OUT"

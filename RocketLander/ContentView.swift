@@ -90,6 +90,8 @@ extension ContentView {
         switch DebugLaunch.value("-screen") {
         case "hangar":
             showingHangar = true
+        case "levels":
+            showingLevelSelect = true
         case "game":
             switch DebugLaunch.value("-mode") {
             case "campaign":
