@@ -37,7 +37,7 @@ This file documents the development history and decisions for the Starship Lande
 | 2.3.0 | 39 | **UPLOADED TO APP STORE CONNECT** (2026-11-10) — "Mission Control": Pilot Rank, Hangar, landing camera, flight guidance, RCS hold, visual overhaul, settings + frame-rate fixes. Processing/TestFlight not yet confirmed. |
 
 **NEXT STEPS:**
-0. Apply the 2.3.0 listing and submit: `Scripts/update_app_store_v230.py --apply --submit` on the Mac with the API key (branch `claude/v230-store-listing`).
+0. v2.3.0 is Waiting for Review (submitted 2026-11-11, manual release). Watch review status; release when approved; device-test Build 39.
 0. v2.3.0 Build 39 uploaded (2026-11-10). Confirm TestFlight processing, device-test, merge PR #4, submit.
 1. Monitor v2.2.1 Build 38 App Store review status.
 2. Verify replacement build on device/App Store/TestFlight after approval/distribution.
@@ -686,6 +686,7 @@ This file documents the development history and decisions for the Starship Lande
 **Key decisions:** see DECISIONS 2026-11-11.
 
 **Not done / risks:**
-- Listing is **not applied** and 2.3.0 is **not submitted**. The cloud session cannot sign in to App Store Connect, and the API key stays on the Mac. Next step is one command on the Mac (see STATUS).
-- Build 39 processing state and device testing still unverified.
-- The `appInfos` name/subtitle call in the script is new and untested against the live API; run the dry run first.
+- **Outcome: listing applied and v2.3.0 submitted for review (Waiting for Review, manual release).** Run on the home Mac by the owner's local agent with a release API key the owner created and placed there; the cloud session never held it.
+- Live runs needed three script fixes: build check before any change + no blanket retries + manual release default; bounded retry for a dropped connection on screenshot transfer; wait for screenshot processing before submitting.
+- Apple required a new age-rating answer (social-media features); the owner confirmed "No".
+- Build 39 confirmed VALID. Device testing still not done. Release after approval is a manual step.

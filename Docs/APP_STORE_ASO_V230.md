@@ -1,6 +1,6 @@
 # App Store ASO — v2.3.0 "Mission Control"
 
-Status: listing prepared in the repo (2026-11-11). **Not yet applied in App Store Connect and not yet submitted.** Apply with `Scripts/update_app_store_v230.py` on the Mac that holds the App Store Connect API key.
+Status: **applied in App Store Connect and submitted for review with v2.3.0 (Build 39) on 2026-11-11** (Waiting for Review, manual release). Applied with `Scripts/update_app_store_v230.py` on the Mac that holds the release API key.
 
 Source of truth for the copy is `Scripts/update_app_store_v230.py`. This file explains the choices.
 

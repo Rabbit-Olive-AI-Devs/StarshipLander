@@ -30,6 +30,10 @@
 - Io captures fail (volcanic debris hits the hovering ship); not used.
 - From the cloud session: Chrome on the Mac was reachable but signed out of App Store Connect, Telegram Web was signed out, the password manager was not connected, and Computer use on the Mac was off. Sign-in was not performed by the session.
 
+- Submission path that worked: the owner created a release API key and placed it on the home Mac; his local agent ran the script. Attempts that did not work from the cloud session: browser sign-in (signed out), password manager (not connected), pulling the dashboard key from Vercel (blocked by the local agent's safety checks).
+- Live-run lessons: submit only after screenshots report COMPLETE; a dropped connection on the file transfer is normal and safe to resend; Apple now requires an age-rating answer about social-media features (owner confirmed "No").
+- Credential was handled by the owner outside the session.
+
 ## Decisions
 1. Add search terms to name and subtitle, keep the brand (DECISIONS 2026-11-11).
 2. Stage screenshots with a scripted DEBUG flight and seeded save data; crop ad banners.
@@ -40,16 +44,20 @@
 - [x] 6 screenshots at 1284x2778 from the 2.3.0 code
 - [x] CI green on `claude/v230-store-listing` (build, tests, captures)
 - [x] Docs swept
-- [ ] Listing applied in App Store Connect
-- [ ] 2.3.0 submitted for review
-- [ ] 2.3.0 live
+- [x] Listing applied in App Store Connect
+- [x] 2.3.0 submitted for review (Waiting for Review, manual release)
+- [ ] 2.3.0 approved and released
 
 ## Commits
 - `a1eb4d7` — Store capture mode for CI screenshots
 - `374b6df` — App Store listing for v2.3.0: copy, listing script, screenshot compositor
 - `96cea33` — Store captures: cross at safe height, delayed start, denser bursts
 - `ceccb12` — Store captures: hover mode so in-flight shots do not depend on timing
-- (this commit) — v2.3.0 App Store screenshots and docs
+- `c6e78b1` — v2.3.0 App Store screenshots and docs
+- `5115e49` — Listing script: check build first, no retries, manual release by default
+- `2afaab3` — Listing script: retry a dropped connection on screenshot transfer
+- `d12265e` — Listing script: wait for screenshot processing, reuse existing submission item
+- (this commit) — Docs: v2.3.0 submitted for review
 
 ## Repo Housekeeping
 - [x] Working tree clean
@@ -58,7 +66,7 @@
 - [x] No secrets or credentials in tracked files
 
 ## Next Actions
-- [ ] On the Mac: dry run, then `--apply --submit`
-- [ ] Confirm Build 39 processing and review status
+- [x] Applied and submitted from the home Mac
+- [ ] Watch review status; release manually when approved
 - [ ] Device-test Build 39
 - [ ] Merge PR #4 and this branch

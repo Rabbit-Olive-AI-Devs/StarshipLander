@@ -1,7 +1,7 @@
 # Release Notes
 
 ## Version 2.3.0 (Build 39) — "Mission Control"
-**Status:** Uploaded to App Store Connect on 2026-11-10 (14:00 CT) from commit `3f72dee` with Xcode 26.6 (17F113); upload accepted. Processing/TestFlight availability not yet confirmed. Not submitted for review. New store listing (name "Starship Lander: Rocket Sim", subtitle "Moon & Mars landing simulator", description, keywords, promotional text, 6 screenshots) is prepared in `Scripts/update_app_store_v230.py` and explained in `Docs/APP_STORE_ASO_V230.md`; not yet applied.
+**Status:** Uploaded to App Store Connect on 2026-11-10 (14:00 CT) from commit `3f72dee` with Xcode 26.6 (17F113); upload accepted. Build 39 confirmed VALID by App Store Connect on 2026-11-11. New store listing (name "Starship Lander: Rocket Sim", subtitle "Moon & Mars landing simulator", description, keywords, promotional text, 6 screenshots) was applied with `Scripts/update_app_store_v230.py` (see `Docs/APP_STORE_ASO_V230.md`) and **v2.3.0 was submitted for review on 2026-11-11 (Waiting for Review, manual release after approval)**.
 
 ### Overview
 The biggest update since Campaign: a reason to come back every day (Pilot Rank + Hangar), a landing that feels cinematic, flight aids that make the game learnable, and a visual overhaul of every world. Also fixes the Sound/Haptics toggles and a frame-rate bug that could make the engine feel weak.

@@ -15,7 +15,7 @@
 | Platform | iOS (iPhone), iOS 15.0+ |
 | Tech | SwiftUI + SpriteKit + CoreMotion |
 | Current Version | **v2.3.0 (Build 39) "Mission Control"** — Pilot Rank XP, Hangar skins, cinematic landing camera, flight guidance, RCS hold, visual overhaul, sound/haptics + frame-rate fixes. |
-| Version Status | **v2.3.0 Build 39 uploaded to App Store Connect** on 2026-11-10 14:00 CT from the home Mac (`Scripts/release_testflight.sh`, Xcode 26.6 / 17F113, commit `3f72dee`). Archive, export and upload acceptance verified; Apple processing, TestFlight visibility and device gameplay **not yet verified**. PR #4 open. **App Store listing for 2.3.0 prepared in the repo on 2026-11-11** (new name suffix, subtitle, keywords, description, 6 screenshots; see `Docs/APP_STORE_ASO_V230.md`) but **not yet applied in App Store Connect and not submitted for review**. |
+| Version Status | **v2.3.0 Build 39 uploaded to App Store Connect** on 2026-11-10 14:00 CT from the home Mac (`Scripts/release_testflight.sh`, Xcode 26.6 / 17F113, commit `3f72dee`). Archive, export and upload acceptance verified; Apple processing, TestFlight visibility and device gameplay **not yet verified**. PR #4 open. **App Store listing for 2.3.0 prepared in the repo on 2026-11-11** (new name suffix, subtitle, keywords, description, 6 screenshots; see `Docs/APP_STORE_ASO_V230.md`) and **applied in App Store Connect; v2.3.0 (Build 39) submitted for review on 2026-11-11 (state: Waiting for Review, release type manual)**. Run from the home Mac with a release API key stored on that Mac. |
 | Last Published | v2.2.1 (Build 38) — live on the App Store (public listing checked 2026-11-11: version 2.2.1, 2 ratings) |
 | Developer | Thiago Borges de Oliveira / Rabbit Olive Studios |
 | Team ID | 6XK6BNVURL |
@@ -77,7 +77,7 @@ v2.2.0 adds three pillars: (1) Daily Challenge system with 75 templates, auto-co
 
 ## Immediate Next Tasks (ordered)
 
-0. **v2.3.0**: ~~upload Build 39~~ (done 2026-11-10). Next: confirm processing + TestFlight availability in App Store Connect; device-test (RCS hold, landing camera, Hangar, sound/haptics toggles, campaign startup on Earth/Venus); merge PR #4. **Submit**: on the Mac that holds the App Store Connect API key run `ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v230.py --apply --submit` from branch `claude/v230-store-listing` (dry run first without flags). It checks Build 39 first, applies the new listing, attaches the build and submits; approved versions are held for manual release unless `--auto-release` is added. Do not re-upload Build 39.
+0. **v2.3.0**: ~~upload Build 39~~ (done 2026-11-10). Next: confirm processing + TestFlight availability in App Store Connect; device-test (RCS hold, landing camera, Hangar, sound/haptics toggles, campaign startup on Earth/Venus); merge PR #4. ~~Submit~~ (done 2026-11-11: Waiting for Review, manual release). When Apple approves, release it in App Store Connect (or re-run policy with `--auto-release` next time). Do not re-upload Build 39.
 
 1. Monitor v2.2.1 Build 38 review status until approved/distributed.
 2. Verify the replacement App Store/TestFlight build on device as soon as Apple makes it available.
