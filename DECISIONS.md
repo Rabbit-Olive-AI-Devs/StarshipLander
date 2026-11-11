@@ -590,3 +590,12 @@ This file records key technical and design decisions, including context, alterna
 **Context:** No Mac was reachable in this session; uploads previously required Xcode Organizer on Thiago's Mac.
 **Decision:** Add `.github/workflows/testflight.yml` (archive + upload with App Store Connect API key stored only as GitHub encrypted secrets `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`, triggered by `testflight/*` tags) and `Scripts/release_testflight.sh` (uses the Xcode-signed-in account on a Mac). Neither reads or stores keys in the repo or session.
 **Consequences:** Credentials must be added by Thiago once (GitHub Settings → Secrets). The API key needs the Admin role for cloud-managed distribution signing.
+
+---
+
+## [2026-11-11] v2.3.0 — App Store listing rewritten for search visibility
+**Context:** Owner asked for a listing aimed at visibility and sharing. The live 2.2.1 page had 2 ratings, a subtitle with no search terms ("Precision piloting. No margin.") and a description that opened with a hotfix notice.
+**Options considered:** (a) Keep name and subtitle, change only description and screenshots. (b) Add search terms to the name and subtitle, which Apple weights most. (c) Rename the game.
+**Decision:** (b). Name "Starship Lander: Rocket Sim", subtitle "Moon & Mars landing simulator", keyword field rebuilt with no repeats of name/subtitle words, description opens with a challenge, 6 framed screenshots made from CI captures. "Precision beats luck" stays as the positioning line (`GROWTH_PLAN.md`).
+**Why:** The brand name is unchanged and the added words are the ones people search for. Screenshots and the first description lines drive conversion.
+**Consequences:** Name and subtitle changes go through review with 2.3.0. Screenshots use a scripted DEBUG autopilot and seeded save data (rank, scores, owned ships) to stage real game screens; ad banners are cropped out. No third-party trademarks in any field. In-game share and rating prompts are logged as follow-ups, not part of Build 39.

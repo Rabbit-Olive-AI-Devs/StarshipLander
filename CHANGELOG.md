@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `BlueStarManager.spend(_:)` / `award(_:)`.
 - Tests: `PilotProgressTests`, `ShipSkinTests`.
 - CI: simulator screenshot job (`Scripts/ci_screenshots.sh`) using DEBUG-only launch arguments (`-screen`, `-mode`, `-level`, `-autopilot`); `claude/**` branches trigger CI.
+- App Store listing tooling (2026-11-11, no change to Build 39): `Scripts/update_app_store_v230.py` (name, subtitle, copy, keywords, screenshots, Build 39, submission), `Scripts/generate_store_screenshots.py`, 6 new screenshots in `Screenshots/appstore-v2.3.0/`. DEBUG-only capture aids: `-screen levels`, scripted autopilot with `-pad`, `-delay`, `-hold`.
 - Release: `.github/workflows/testflight.yml` (archive + upload with App Store Connect API key secrets) and `Scripts/release_testflight.sh` (one-command upload from a signed-in Mac).
 
 ### Fixed

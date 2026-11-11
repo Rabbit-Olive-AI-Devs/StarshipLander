@@ -172,6 +172,8 @@ StarshipLander/
 │   ├── generate_sounds.py           # Sound effect generator
 │   ├── generate_icon.py             # App icon generator
 │   ├── generate_screenshots.py      # Screenshot generator
+│   ├── generate_store_screenshots.py # App Store screenshot set from CI captures (v2.3.0)
+│   ├── update_app_store_v230.py     # App Store Connect listing + submission (v2.3.0)
 │   ├── caption_screenshots.py       # App Store screenshot captioning
 │   ├── calculate_perfect_scores.py  # Perfect landing score analysis
 │   ├── setup_game_center.py        # ASC API: create GC leaderboards + achievements + upload images
@@ -179,7 +181,7 @@ StarshipLander/
 │   ├── app_store_metadata.json      # App Store metadata reference
 │   ├── export_chat_transcripts.py   # Claude Code transcript exporter
 │   ├── ci_xcodebuild.sh             # CI build + test
-│   ├── ci_screenshots.sh            # CI simulator screenshots (DEBUG launch args + autopilot)
+│   ├── ci_screenshots.sh            # CI simulator screenshots (DEBUG launch args, seeded state, scripted autopilot)
 │   └── release_testflight.sh        # Archive + upload to TestFlight from a signed-in Mac
 ├── .github/
 │   ├── pull_request_template.md     # PR checklist template

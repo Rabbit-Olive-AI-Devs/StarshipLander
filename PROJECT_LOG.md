@@ -15,7 +15,7 @@ This file documents the development history and decisions for the Starship Lande
 
 ---
 
-## Current Status (2026-11-10, Session 69)
+## Current Status (2026-11-11, Session 71)
 
 | Version | Build | Status |
 |---------|-------|--------|
@@ -37,6 +37,7 @@ This file documents the development history and decisions for the Starship Lande
 | 2.3.0 | 39 | **UPLOADED TO APP STORE CONNECT** (2026-11-10) — "Mission Control": Pilot Rank, Hangar, landing camera, flight guidance, RCS hold, visual overhaul, settings + frame-rate fixes. Processing/TestFlight not yet confirmed. |
 
 **NEXT STEPS:**
+0. Apply the 2.3.0 listing and submit: `Scripts/update_app_store_v230.py --apply --submit` on the Mac with the API key (branch `claude/v230-store-listing`).
 0. v2.3.0 Build 39 uploaded (2026-11-10). Confirm TestFlight processing, device-test, merge PR #4, submit.
 1. Monitor v2.2.1 Build 38 App Store review status.
 2. Verify replacement build on device/App Store/TestFlight after approval/distribution.
@@ -666,3 +667,25 @@ This file documents the development history and decisions for the Starship Lande
 - Warnings: missing dSYMs for GoogleMobileAds and UserMessagingPlatform (upload unaffected).
 - Not verified: Apple processing, TestFlight visibility, device gameplay.
 
+
+---
+
+### Session 71 (2026-11-11) - v2.3.0 App Store Listing (ASO) and Screenshot Pipeline
+
+**Phase:** Growth / release (no gameplay change, Build 39 untouched). Session 70 is the v3.0.0 work on `claude/v300-starship-program`.
+
+**Goal:** Owner asked to make 2.3 live and to change the description, screenshots and the rest of the listing for visibility and sharing.
+
+**What changed:**
+- `Scripts/update_app_store_v230.py` (renamed from `update_app_store_v220.py`): 2.3.0 / Build 39, new name suffix, subtitle, keywords, description, promotional text, review notes; sets name/subtitle; refuses a build that is not `VALID`; checks character limits.
+- `Scripts/generate_store_screenshots.py` + `Screenshots/appstore-v2.3.0/` (6 PNGs, 1284x2778).
+- `Scripts/ci_screenshots.sh`: seeds saved state through launch arguments; hover captures for in-flight shots.
+- DEBUG only: `GameScene+Juice.swift` autopilot is now a scripted flight (`-pad`, `-delay`, `-hold`); `ContentView.swift` adds `-screen levels`.
+- Docs: `Docs/APP_STORE_ASO_V230.md`, STATUS, CHANGELOG, README, DECISIONS, RELEASE_NOTES, session summary.
+
+**Key decisions:** see DECISIONS 2026-11-11.
+
+**Not done / risks:**
+- Listing is **not applied** and 2.3.0 is **not submitted**. The cloud session cannot sign in to App Store Connect, and the API key stays on the Mac. Next step is one command on the Mac (see STATUS).
+- Build 39 processing state and device testing still unverified.
+- The `appInfos` name/subtitle call in the script is new and untested against the live API; run the dry run first.

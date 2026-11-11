@@ -30,12 +30,12 @@ CAPTURE_KEEP = 0.895  # fraction of capture height kept (drops the ad banner)
 
 # (output name, capture file, headline lines, kicker, accent RGB)
 SHOTS = [
-    ("01_land_the_starship", "10_classic_f08.png", ["LAND THE", "STARSHIP"], "PRECISION BEATS LUCK", (255, 140, 40)),
-    ("02_perfect_landing", "10_classic_f14.png", ["STICK IT.", "SCORE IT."], "EVERY LANDING IS RATED", (70, 220, 120)),
-    ("03_ten_worlds", "12_jupiter_f07.png", ["10 WORLDS", "10 GRAVITIES"], "MOON TO JUPITER CAMPAIGN", (255, 190, 90)),
+    ("01_land_the_starship", "11_mars_f2.png", ["LAND THE", "STARSHIP"], "PRECISION BEATS LUCK", (255, 140, 40)),
+    ("02_perfect_landing", "20_result.png", ["STICK IT.", "SCORE IT."], "EVERY LANDING IS RATED", (70, 220, 120)),
+    ("03_ten_worlds", "12_jupiter_f2.png", ["10 WORLDS", "10 GRAVITIES"], "MOON TO JUPITER CAMPAIGN", (255, 190, 90)),
     ("04_pilot_rank", "01_menu.png", ["CADET TO", "LEGEND"], "EARN XP ON EVERY FLIGHT", (90, 170, 255)),
     ("05_hangar", "02_hangar.png", ["BUILD YOUR", "FLEET"], "7 STARSHIPS TO UNLOCK", (200, 110, 255)),
-    ("06_daily_challenge", "04_daily.png", ["NEW MISSION", "EVERY DAY"], "DAILY CHALLENGE", (60, 220, 230)),
+    ("06_daily_challenge", "16_daily_f2.png", ["NEW MISSION", "EVERY DAY"], "DAILY CHALLENGE", (60, 220, 230)),
 ]
 
 
