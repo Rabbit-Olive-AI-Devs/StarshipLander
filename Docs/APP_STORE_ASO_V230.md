@@ -46,7 +46,7 @@ ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v230.py            # 
 ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v230.py --apply --submit
 ```
 
-The script first checks that Build 39 is `VALID` and the screenshot files are present (dry run included) and changes nothing if either fails. It then creates version 2.3.0, sets name, subtitle, copy, keywords and review notes, attaches Build 39, replaces the screenshots, and with `--submit` sends it for review. Any failed call stops the script; nothing is retried. An approved version is held for manual release unless `--auto-release` is passed.
+The script first checks that Build 39 is `VALID` and the screenshot files are present (dry run included) and changes nothing if either fails. It then creates version 2.3.0, sets name, subtitle, copy, keywords and review notes, attaches Build 39, replaces the screenshots, and with `--submit` sends it for review. Any failed API call stops the script; the only retry is a dropped connection while sending a screenshot file (3 attempts). Running it again after a failure is safe: existing screenshots are replaced. An approved version is held for manual release unless `--auto-release` is passed.
 
 ## Virality notes (not in this release)
 

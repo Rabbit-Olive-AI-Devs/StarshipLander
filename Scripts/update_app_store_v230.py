@@ -8,7 +8,9 @@ screenshots, Build 39, and (with --submit) the review submission.
   ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v230.py --apply --submit
 
 Build 39 and the screenshot files are checked before anything is changed, in the
-dry run too. Any failed call stops the script; nothing is retried. Approved
+dry run too. Any failed API call stops the script. The only retry is a dropped
+connection while sending a screenshot file (3 attempts). It is safe to run
+again after a failure: existing screenshots are replaced. Approved
 versions are held for manual release unless --auto-release is passed.
 
 It does not store credentials. It reads the .p8 key from
@@ -19,6 +21,7 @@ import argparse
 import glob
 import os
 import sys
+import time
 from pathlib import Path
 
 import requests
@@ -33,6 +36,7 @@ BUILD_NUMBER = "39"
 LOCALE = "en-US"
 SCREENSHOT_DISPLAY_TYPE = "APP_IPHONE_65"
 SCREENSHOT_DIR = ROOT / "Screenshots" / "appstore-v2.3.0"
+UPLOAD_ATTEMPTS = 3
 
 APP_NAME = "Starship Lander: Rocket Sim"
 SUBTITLE = "Moon & Mars landing simulator"
@@ -414,6 +418,26 @@ def reserve_upload(headers, set_id, path):
     return data["data"]
 
 
+def send_chunk(method, url, op_headers, chunk, name):
+    """Send one screenshot chunk to its presigned upload URL.
+
+    A dropped connection is retried (the transfer is idempotent), up to
+    UPLOAD_ATTEMPTS in total. HTTP error responses are never retried. The URL
+    is a temporary signed link, so it is kept out of all messages.
+    """
+    for attempt in range(1, UPLOAD_ATTEMPTS + 1):
+        try:
+            return requests.request(method, url, headers=op_headers, data=chunk, timeout=120)
+        except (requests.ConnectionError, requests.Timeout) as exc:
+            reason = type(exc).__name__
+            if attempt == UPLOAD_ATTEMPTS:
+                raise RuntimeError(
+                    f"Binary upload failed for {name}: {reason} on all {UPLOAD_ATTEMPTS} attempts"
+                ) from None
+            print(f"  {name}: connection dropped ({reason}), attempt {attempt}/{UPLOAD_ATTEMPTS}; sending again")
+            time.sleep(5 * attempt)
+
+
 def upload_screenshot(headers, set_id, path, apply):
     print(f"Uploading {path.name} ({path.stat().st_size} bytes)")
     if not apply:
@@ -432,11 +456,9 @@ def upload_screenshot(headers, set_id, path, apply):
         offset = op.get("offset", 0)
         length = op.get("length", len(data))
         chunk = data[offset : offset + length]
-        response = requests.request(method, url, headers=op_headers, data=chunk, timeout=120)
+        response = send_chunk(method, url, op_headers, chunk, path.name)
         if response.status_code >= 400:
-            raise RuntimeError(
-                f"Binary upload failed for {path.name}: {response.status_code}\n{response.text[:500]}"
-            )
+            raise RuntimeError(f"Binary upload failed for {path.name}: HTTP {response.status_code}")
 
     body = {
         "data": {
