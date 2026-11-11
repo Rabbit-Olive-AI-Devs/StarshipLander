@@ -10,7 +10,9 @@ screenshots, Build 39, and (with --submit) the review submission.
 Build 39 and the screenshot files are checked before anything is changed, in the
 dry run too. Any failed API call stops the script. The only retry is a dropped
 connection while sending a screenshot file (3 attempts). It is safe to run
-again after a failure: existing screenshots are replaced. Approved
+again after a failure: existing screenshots are replaced. Before submitting it
+waits (up to 10 minutes) for Apple to finish processing the screenshots. To
+submit without uploading again, add --skip-screenshots. Approved
 versions are held for manual release unless --auto-release is passed.
 
 It does not store credentials. It reads the .p8 key from
@@ -37,6 +39,7 @@ LOCALE = "en-US"
 SCREENSHOT_DISPLAY_TYPE = "APP_IPHONE_65"
 SCREENSHOT_DIR = ROOT / "Screenshots" / "appstore-v2.3.0"
 UPLOAD_ATTEMPTS = 3
+PROCESSING_TIMEOUT = 600
 
 APP_NAME = "Starship Lander: Rocket Sim"
 SUBTITLE = "Moon & Mars landing simulator"
@@ -481,6 +484,40 @@ def upload_screenshots(headers, loc_id, apply):
         upload_screenshot(headers, set_id, path, apply)
 
 
+def wait_for_screenshots(headers, loc_id):
+    """Block until Apple has finished processing every uploaded screenshot.
+
+    A submission sent while a screenshot is still processing is rejected, so
+    this polls the delivery state (a read) for up to PROCESSING_TIMEOUT seconds.
+    """
+    set_id = get_or_create_screenshot_set(headers, loc_id, apply=False)
+    if not set_id:
+        raise RuntimeError("No screenshot set to submit")
+    deadline = time.time() + PROCESSING_TIMEOUT
+    while True:
+        shots = request_json(
+            headers,
+            "GET",
+            f"/v1/appScreenshotSets/{set_id}/appScreenshots",
+            params={"fields[appScreenshots]": "fileName,assetDeliveryState", "limit": 50},
+        ).get("data", [])
+        states = {
+            shot["attributes"].get("fileName"): (shot["attributes"].get("assetDeliveryState") or {}).get("state")
+            for shot in shots
+        }
+        failed = [name for name, state in states.items() if state == "FAILED"]
+        if failed:
+            raise RuntimeError(f"Apple rejected screenshots during processing: {failed}")
+        pending = [name for name, state in states.items() if state != "COMPLETE"]
+        if shots and not pending:
+            print(f"All {len(shots)} screenshots processed")
+            return
+        if time.time() >= deadline:
+            raise RuntimeError(f"Screenshots still processing after {PROCESSING_TIMEOUT}s: {pending}")
+        print(f"Waiting for Apple to process {len(pending)} screenshot(s)")
+        time.sleep(15)
+
+
 def submit_for_review(headers, app_id, version_id, apply):
     print("Preparing App Store review submission")
     submissions = request_json(
@@ -517,6 +554,19 @@ def submit_for_review(headers, app_id, version_id, apply):
         print(f"Created review submission id={submission_id}")
 
     if apply:
+        items = request_json(
+            headers,
+            "GET",
+            f"/v1/reviewSubmissions/{submission_id}/items",
+            params={"include": "appStoreVersion", "limit": 50},
+        ).get("data", [])
+        version_in_submission = any(
+            ((item.get("relationships", {}).get("appStoreVersion", {}).get("data")) or {}).get("id") == version_id
+            for item in items
+        )
+    if apply and version_in_submission:
+        print("Version is already in the review submission")
+    elif apply:
         body = {
             "data": {
                 "type": "reviewSubmissionItems",
@@ -529,6 +579,7 @@ def submit_for_review(headers, app_id, version_id, apply):
         item = request_json(headers, "POST", "/v1/reviewSubmissionItems", expected=(201,), json=body)["data"]
         print(f"Created review submission item id={item['id']}")
 
+    if apply:
         body = {
             "data": {
                 "type": "reviewSubmissions",
@@ -591,6 +642,8 @@ def main():
     if not args.skip_screenshots:
         upload_screenshots(headers, loc_id, args.apply)
     if args.submit:
+        if args.apply:
+            wait_for_screenshots(headers, loc_id)
         submit_for_review(headers, app_id, version_id, args.apply)
     print("Done")
 
