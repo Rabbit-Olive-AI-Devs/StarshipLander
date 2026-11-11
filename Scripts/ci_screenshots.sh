@@ -67,15 +67,16 @@ STATE=(
   -hangarOwnedSkins "(stainless,nightOps,redPlanet,lunarGold,europaIce,synthwave)"
 )
 
-burst() { # prefix frames args...
-  local prefix="$1" frames="$2"; shift 2
+hover() { # prefix args... : three frames of the ship holding above its pad
+  local prefix="$1"; shift
   xcrun simctl terminate "$SIM_ID" "$BUNDLE_ID" >/dev/null 2>&1 || true
-  xcrun simctl launch "$SIM_ID" "$BUNDLE_ID" "$@" >/dev/null
-  sleep 9
-  for i in $(seq -w 1 "$frames"); do
+  xcrun simctl launch "$SIM_ID" "$BUNDLE_ID" -screen game -autopilot -delay 8 "${STATE[@]}" "$@" >/dev/null
+  sleep 20
+  for i in 1 2 3; do
     xcrun simctl io "$SIM_ID" screenshot "$OUT/${prefix}_f${i}.png" >/dev/null
+    sleep 2
   done
-  echo "captured $prefix x$frames"
+  echo "captured $prefix"
 }
 
 # Warm-up launch (first launch is slow on CI)
@@ -84,12 +85,13 @@ shoot 01_menu 10 -screen menu "${STATE[@]}" -hangarSelectedSkin lunarGold
 shoot 02_hangar 10 -screen hangar "${STATE[@]}" -hangarSelectedSkin synthwave
 shoot 03_levels 10 -screen levels "${STATE[@]}"
 shoot 04_daily 12 -screen game -mode daily "${STATE[@]}" -hangarSelectedSkin europaIce
-FLY=(-autopilot -delay 10 "${STATE[@]}")
-burst 10_classic 26 -screen game -mode classic -pad c "${FLY[@]}" -hangarSelectedSkin stainless
-burst 11_mars 22 -screen game -mode campaign -level 2 -pad b "${FLY[@]}" -hangarSelectedSkin redPlanet
-burst 12_jupiter 22 -screen game -mode campaign -level 10 -pad b "${FLY[@]}" -hangarSelectedSkin synthwave
-burst 13_europa 22 -screen game -mode campaign -level 4 -pad c "${FLY[@]}" -hangarSelectedSkin europaIce
-burst 14_io 22 -screen game -mode campaign -level 9 -pad b "${FLY[@]}" -hangarSelectedSkin nightOps
-burst 15_moon 22 -screen game -mode campaign -level 1 -pad c "${FLY[@]}" -hangarSelectedSkin lunarGold
+hover 10_classic -mode classic -pad c -hold 110 -hangarSelectedSkin stainless
+hover 11_mars -mode campaign -level 2 -pad b -hold 150 -hangarSelectedSkin redPlanet
+hover 12_jupiter -mode campaign -level 10 -pad b -hold 120 -hangarSelectedSkin synthwave
+hover 13_europa -mode campaign -level 4 -pad c -hold 130 -hangarSelectedSkin europaIce
+hover 14_io -mode campaign -level 9 -pad b -hold 140 -hangarSelectedSkin nightOps
+hover 15_moon -mode campaign -level 1 -pad c -hold 100 -hangarSelectedSkin lunarGold
+hover 16_daily -mode daily -pad c -hold 120 -hangarSelectedSkin lunarGold
+shoot 20_result 30 -screen game -mode classic -autopilot -delay 8 -pad c "${STATE[@]}" -hangarSelectedSkin stainless
 rm -f "$OUT/00_warmup.png"
 ls -la "$OUT"

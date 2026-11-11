@@ -240,7 +240,7 @@ extension GameScene {
 
     /// Scripted flight used for CI and App Store captures: crosses to the pad chosen
     /// with `-pad a|b|c` (default b) at a safe height, then descends on a fixed
-    /// profile. It sets velocity directly so the flight is identical at any
+    /// profile (or hovers, with `-hold`). It sets velocity directly so the flight is identical at any
     /// simulator frame rate.
     func runAutopilot() {
         guard ProcessInfo.processInfo.systemUptime >= GameScene.autopilotStart else { return }
@@ -256,10 +256,19 @@ extension GameScene {
         let height = rocket.position.y + StarshipArt.feetBottomY - pad.frame.maxY
         let aligned = abs(offset) < 8
         let cruiseHeight: CGFloat = 320
-        let targetDescent = aligned
-            ? max(28, min(300, height * 1.4))
-            : max(0, min(300, (height - cruiseHeight) * 1.4))
-        let burning = height < (aligned ? 260 : cruiseHeight + 60)
+        // `-hold <height>` parks the ship above the pad with the engine lit so a
+        // capture does not depend on timing.
+        let holdHeight = (DebugLaunch.value("-hold")).flatMap { Double($0) }.map { CGFloat($0) }
+        let targetDescent: CGFloat
+        if !aligned {
+            targetDescent = max(0, min(300, (height - cruiseHeight) * 1.4))
+        } else if let holdHeight {
+            targetDescent = max(0, min(300, (height - holdHeight) * 1.4))
+            gameState.fuel = max(gameState.fuel, 60)
+        } else {
+            targetDescent = max(28, min(300, height * 1.4))
+        }
+        let burning = height < (aligned ? max(260, (holdHeight ?? 0) + 60) : cruiseHeight + 60)
 
         gameState.isThrusting = burning
         gameState.isRotatingLeft = false
