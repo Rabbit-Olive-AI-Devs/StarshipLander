@@ -233,19 +233,34 @@ extension GameScene {
 #if DEBUG
 // MARK: - Debug Autopilot (CI screenshots / store captures)
 extension GameScene {
-    /// Scripted descent used for CI and App Store captures: flies the ship to the
-    /// pad chosen with `-pad a|b|c` (default b) on a fixed descent profile. It sets
-    /// velocity directly so the flight is identical at any simulator frame rate.
+    /// Wall-clock time the autopilot starts flying: `-delay <seconds>` after the first
+    /// frame, so captures can wait for a slow simulator to finish launching.
+    private static let autopilotStart = ProcessInfo.processInfo.systemUptime
+        + (Double(DebugLaunch.value("-delay") ?? "") ?? 0)
+
+    /// Scripted flight used for CI and App Store captures: crosses to the pad chosen
+    /// with `-pad a|b|c` (default b) at a safe height, then descends on a fixed
+    /// profile. It sets velocity directly so the flight is identical at any
+    /// simulator frame rate.
     func runAutopilot() {
+        guard ProcessInfo.processInfo.systemUptime >= GameScene.autopilotStart else { return }
         guard hasStarted else {
             gameState.isThrusting = true
             return
         }
-        guard let body = rocket.physicsBody else { return }
+        let padIndex = ["a": 0, "b": 1, "c": 2][DebugLaunch.value("-pad") ?? "b"] ?? 1
+        guard let body = rocket.physicsBody, platforms.indices.contains(padIndex) else { return }
 
-        let altitude = altitudeAboveSurface()
-        let targetDescent = max(28, min(300, altitude * 1.4))
-        let burning = altitude < 260
+        let pad = platforms[padIndex]
+        let offset = pad.position.x - rocket.position.x
+        let height = rocket.position.y + StarshipArt.feetBottomY - pad.frame.maxY
+        let aligned = abs(offset) < 8
+        let cruiseHeight: CGFloat = 320
+        let targetDescent = aligned
+            ? max(28, min(300, height * 1.4))
+            : max(0, min(300, (height - cruiseHeight) * 1.4))
+        let burning = height < (aligned ? 260 : cruiseHeight + 60)
+
         gameState.isThrusting = burning
         gameState.isRotatingLeft = false
         gameState.isRotatingRight = false
@@ -254,15 +269,10 @@ extension GameScene {
         if burning || -velocity.dy > targetDescent {
             velocity.dy = -targetDescent
         }
-
-        let padIndex = ["a": 0, "b": 1, "c": 2][DebugLaunch.value("-pad") ?? "b"] ?? 1
-        if platforms.indices.contains(padIndex) {
-            let offset = platforms[padIndex].position.x - rocket.position.x
-            velocity.dx = max(-90, min(90, offset * 1.2))
-            rocket.zRotation = altitude > 40 ? max(-0.2, min(0.2, -offset * 0.003)) : 0
-        }
+        velocity.dx = max(-140, min(140, offset * 1.5))
         body.velocity = velocity
         body.angularVelocity = 0
+        rocket.zRotation = height > 60 ? max(-0.2, min(0.2, -offset * 0.003)) : 0
     }
 }
 #endif

@@ -46,7 +46,7 @@ shoot() { # name delay args...
 # Saved-game state for store-quality captures, passed as launch arguments
 # (UserDefaults argument domain), so nothing is written to the simulator.
 hex_json() { python3 -c 'import sys; print("<" + sys.argv[1].encode().hex() + ">")' "$1"; }
-SCORES='[{"name":"Thiago","score":18420,"stars":3},{"name":"Nova","score":16950,"stars":3},{"name":"Orion","score":15280,"stars":2}]'
+SCORES='[{"name":"Thiago","score":19640,"stars":3},{"name":"Nova","score":18420,"stars":3},{"name":"Orion","score":17950,"stars":3}]'
 CAMPAIGN="$(python3 -c '
 import json
 top = [{"name": n, "score": s, "stars": 3} for n, s in (("Thiago", 19100), ("Nova", 18800), ("Orion", 18650))]
@@ -71,25 +71,25 @@ burst() { # prefix frames args...
   local prefix="$1" frames="$2"; shift 2
   xcrun simctl terminate "$SIM_ID" "$BUNDLE_ID" >/dev/null 2>&1 || true
   xcrun simctl launch "$SIM_ID" "$BUNDLE_ID" "$@" >/dev/null
-  sleep 2
+  sleep 9
   for i in $(seq -w 1 "$frames"); do
     xcrun simctl io "$SIM_ID" screenshot "$OUT/${prefix}_f${i}.png" >/dev/null
-    sleep 0.5
   done
   echo "captured $prefix x$frames"
 }
 
 # Warm-up launch (first launch is slow on CI)
 shoot 00_warmup 12 -screen menu
-shoot 01_menu 6 -screen menu "${STATE[@]}" -hangarSelectedSkin lunarGold
-shoot 02_hangar 6 -screen hangar "${STATE[@]}" -hangarSelectedSkin synthwave
-shoot 03_levels 6 -screen levels "${STATE[@]}"
-shoot 04_daily 6 -screen game -mode daily "${STATE[@]}" -hangarSelectedSkin europaIce
-burst 10_classic 18 -screen game -mode classic -autopilot -pad b "${STATE[@]}" -hangarSelectedSkin stainless
-burst 11_mars 16 -screen game -mode campaign -level 2 -autopilot -pad c "${STATE[@]}" -hangarSelectedSkin redPlanet
-burst 12_jupiter 16 -screen game -mode campaign -level 10 -autopilot -pad b "${STATE[@]}" -hangarSelectedSkin synthwave
-burst 13_europa 16 -screen game -mode campaign -level 4 -autopilot -pad a "${STATE[@]}" -hangarSelectedSkin europaIce
-burst 14_io 16 -screen game -mode campaign -level 9 -autopilot -pad c "${STATE[@]}" -hangarSelectedSkin nightOps
-burst 15_moon 16 -screen game -mode campaign -level 1 -autopilot -pad b "${STATE[@]}" -hangarSelectedSkin lunarGold
+shoot 01_menu 10 -screen menu "${STATE[@]}" -hangarSelectedSkin lunarGold
+shoot 02_hangar 10 -screen hangar "${STATE[@]}" -hangarSelectedSkin synthwave
+shoot 03_levels 10 -screen levels "${STATE[@]}"
+shoot 04_daily 12 -screen game -mode daily "${STATE[@]}" -hangarSelectedSkin europaIce
+FLY=(-autopilot -delay 10 "${STATE[@]}")
+burst 10_classic 26 -screen game -mode classic -pad c "${FLY[@]}" -hangarSelectedSkin stainless
+burst 11_mars 22 -screen game -mode campaign -level 2 -pad b "${FLY[@]}" -hangarSelectedSkin redPlanet
+burst 12_jupiter 22 -screen game -mode campaign -level 10 -pad b "${FLY[@]}" -hangarSelectedSkin synthwave
+burst 13_europa 22 -screen game -mode campaign -level 4 -pad c "${FLY[@]}" -hangarSelectedSkin europaIce
+burst 14_io 22 -screen game -mode campaign -level 9 -pad b "${FLY[@]}" -hangarSelectedSkin nightOps
+burst 15_moon 22 -screen game -mode campaign -level 1 -pad c "${FLY[@]}" -hangarSelectedSkin lunarGold
 rm -f "$OUT/00_warmup.png"
 ls -la "$OUT"
