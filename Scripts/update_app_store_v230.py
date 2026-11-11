@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Prepare the App Store Connect v2.2.1 hotfix listing.
+Prepare the App Store Connect v2.3.0 listing: name, subtitle, copy, keywords,
+screenshots, Build 39, and (with --submit) the review submission.
 
-This script uses the same credential flow as setup_game_center.py:
-  ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v220.py --apply
-  ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v220.py --apply --submit
+  ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v230.py            # dry run
+  ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v230.py --apply
+  ASC_ISSUER_ID=<issuer-id> python3 Scripts/update_app_store_v230.py --apply --submit
 
 It does not store credentials. It reads the .p8 key from
 ~/.appstoreconnect/private_keys/AuthKey_*.p8 or ASC_KEY_ID/ASC_PRIVATE_KEY.
@@ -24,63 +25,86 @@ sys.path.insert(0, str(ROOT / "Scripts"))
 
 from setup_game_center import BASE_URL, generate_token, get_app_id, make_headers  # noqa: E402
 
-VERSION = "2.2.1"
-BUILD_NUMBER = "38"
+VERSION = "2.3.0"
+BUILD_NUMBER = "39"
 LOCALE = "en-US"
 SCREENSHOT_DISPLAY_TYPE = "APP_IPHONE_65"
-SCREENSHOT_DIR = ROOT / "Screenshots" / "appstore-v2.2.0"
+SCREENSHOT_DIR = ROOT / "Screenshots" / "appstore-v2.3.0"
+
+APP_NAME = "Starship Lander: Rocket Sim"
+SUBTITLE = "Moon & Mars landing simulator"
 
 PROMOTIONAL_TEXT = (
-    "Hotfix: fixes the Campaign startup crash in v2.2.0, with Daily Challenge, Blue Stars, and global ranks still included."
+    "New: Pilot Ranks, a Hangar with 7 Starship paint schemes, and cinematic landings. "
+    "Precision beats luck. Can you stick the landing on all 10 worlds?"
 )
 
-DESCRIPTION = """Master rocket landings under real pressure.
+DESCRIPTION = """Can you land a rocket? Most pilots crash on their first try.
 
-Starship Lander is a precision space-flight game about thrust, gravity, fuel, and timing. Guide your rocket toward the platform, manage descent speed, keep your tilt under control, and touch down cleanly before the mission slips away.
+Starship Lander is a rocket landing game where precision beats luck. Fire the engines, fight gravity, keep the ship upright and touch down on the pad before the fuel runs out. One flight takes 30 seconds. Getting it perfect takes a lot longer.
 
-NEW: DAILY CHALLENGE
-Take on a fresh landing mission every day. Each challenge changes the objective, planet, difficulty, and scoring pressure. Complete daily missions to earn Blue Stars and build consistency.
+EASY TO START, HARD TO MASTER
+• Three buttons: thrust, rotate left, rotate right. Or tilt your phone to steer.
+• A guide line turns green when you are lined up with the pad.
+• Three landing pads on every flight. The small one pays 5x.
+• Every landing is scored on speed, tilt, accuracy and fuel left. The perfect landing is 20,000 points.
 
-SKILL-BASED ROCKET PHYSICS
-Every landing is earned. Control vertical speed, horizontal drift, tilt, fuel, and timing while aiming for one of three landing zones.
+10 WORLDS, 10 DIFFERENT FLIGHTS
+Fly the campaign from the Moon to Jupiter. Mars has dust storms. Titan has thick air. Europa is ice. Earth has moving platforms. Io throws volcanic rock at you. Every world has its own gravity and its own way to ruin a good approach.
 
-10-WORLD CAMPAIGN
-Fly through a full campaign across Moon, Mars, Titan, Europa, Earth, Venus, Mercury, Ganymede, Io, and Jupiter. Each world changes gravity, hazards, and the way your rocket handles.
+A NEW MISSION EVERY DAY
+The Daily Challenge gives every pilot the same mission. Complete it to earn Blue Stars and keep your streak alive.
 
-GLOBAL COMPETITION
-Compete through Game Center leaderboards for Classic, Campaign, Galaxy Rank, and Daily Challenge scores.
+RANK UP AND BUILD YOUR FLEET
+• Earn XP on every flight and climb 10 pilot ranks, from Cadet to Starship Legend.
+• Spend Blue Stars in the Hangar on 7 Starship paint schemes, each with its own engine glow.
+• Beat your friends on the Game Center leaderboards and unlock achievements.
+• Share your score card and dare someone to beat it.
 
-FEATURES
-• Daily Challenge mode with rotating objectives
-• Blue Star rewards for daily completions and milestones
-• 10 campaign worlds with unique hazards
-• Skill-based physics and scoring
-• Button and tilt controls
-• Global leaderboards and achievements
-• Fast retries for “one more landing” gameplay
+BUILT FOR ONE MORE TRY
+• Cinematic camera on final approach, with dust, sparks and big explosions
+• Instant retry, short flights, no waiting
+• Retro sound and haptic feedback
+• No account needed. No purchases. Everything is earned by flying.
 
-Landing is easy. Landing well is not."""
+Landing is easy. Landing well is not. How high can you score?"""
 
-WHATS_NEW = """HOTFIX IN v2.2.1
+WHATS_NEW = """MISSION CONTROL UPDATE
 
-• Fixes a crash that could close the app when starting Campaign mode after selecting a planet
-• Improves fresh-run reset handling so a new run cannot immediately reset on first input
-• Restores Mercury heat shimmer and Io volcanic effects in Daily Challenge
+• Pilot Rank: earn XP on every flight and climb 10 ranks from Cadet to Starship Legend
+• Hangar: spend Blue Stars on 7 Starship paint schemes, each with its own engine glow
+• Cinematic landings: the camera zooms in on final approach, with dust, sparks and bigger explosions
+• Flight guidance: a guide line turns green when you're lined up with the pad, plus a live descent readout by your ship
+• Every world redesigned with its own sky, horizon glow and atmosphere
+• Fixes: Sound and Haptics settings now work, smoother thrust on every device"""
 
-Also includes the v2.2 Daily Challenge update: 75 rotating challenges, Blue Star rewards, global rank display, refreshed Starship artwork, and improved campaign/daily scoring persistence."""
-
-KEYWORDS = "rocket,lander,space,landing,physics,flight,moon,mars,daily,challenge,leaderboard,arcade"
+KEYWORDS = "space,spaceship,physics,flight,lunar,gravity,pilot,arcade,daily,challenge,skill,planet,jupiter,orbit"
 SUPPORT_URL = "https://rabbitolivestudios.github.io"
 MARKETING_URL = "https://rabbitolivestudios.github.io"
 REVIEW_NOTES = """Starship Lander is a skill-based rocket landing game.
 
 No login is required. Game Center is optional and used for leaderboards and achievements. If the reviewer is not signed into Game Center, the game remains playable and leaderboard UI may show local/fallback states.
 
-This v2.2.1 hotfix resolves a live v2.2.0 Campaign startup crash. Repro in the affected build: open Campaign, select a planet such as Earth or Venus, then start gameplay. The fix makes campaign Game Center attempt tracking persist with property-list-safe keys and also clears stale fresh-run reset state.
+New in 2.3.0: Pilot Rank (XP earned by flying), a Hangar with 7 ship paint schemes, and visual upgrades. Blue Stars are earned only by playing (Daily Challenge, campaign milestones, rank promotions). There are no in-app purchases, no new SDKs and no new data collection in this build.
 
-Daily Challenge is available from the main menu. Blue Stars are earned in-game through Daily Challenge completions and campaign milestones; there is no in-app purchase in this build.
+The app name and subtitle were updated in this version to describe the game more clearly.
 
-Ads are shown with conservative pacing on retry/next-level flows. The ATT prompt may appear on first launch. Button controls are enabled by default; tilt controls can be selected from the settings menu."""
+Ads are unchanged: banner ads with conservative pacing. The ATT prompt may appear on first launch. Button controls are enabled by default; tilt controls can be selected from the settings menu."""
+
+LIMITS = {
+    "name": (APP_NAME, 30),
+    "subtitle": (SUBTITLE, 30),
+    "promotional text": (PROMOTIONAL_TEXT, 170),
+    "keywords": (KEYWORDS, 100),
+    "description": (DESCRIPTION, 4000),
+    "what's new": (WHATS_NEW, 4000),
+}
+
+
+def check_limits():
+    for field, (text, limit) in LIMITS.items():
+        if len(text) > limit:
+            raise SystemExit(f"{field} is {len(text)} characters; the App Store limit is {limit}")
 
 
 def find_api_key():
@@ -218,6 +242,37 @@ def patch_localization(headers, loc_id, apply):
         request_json(headers, "PATCH", f"/v1/appStoreVersionLocalizations/{loc_id}", json=body)
 
 
+def patch_app_info(headers, app_id, apply):
+    """Set name and subtitle on the editable app info (exists once the new version does)."""
+    infos = request_json(headers, "GET", f"/v1/apps/{app_id}/appInfos").get("data", [])
+    live_states = {"READY_FOR_SALE", "READY_FOR_DISTRIBUTION"}
+    editable = [
+        info for info in infos
+        if (info["attributes"].get("state") or info["attributes"].get("appStoreState")) not in live_states
+    ]
+    if not editable:
+        print("No editable app info yet (it appears after the new version is created); name/subtitle not changed")
+        return
+    info_id = editable[0]["id"]
+    locs = request_json(
+        headers, "GET", f"/v1/appInfos/{info_id}/appInfoLocalizations", params={"limit": 50}
+    ).get("data", [])
+    loc = next((item for item in locs if item["attributes"].get("locale") == LOCALE), None)
+    if not loc:
+        raise RuntimeError(f"No {LOCALE} app info localization found")
+    attrs = loc["attributes"]
+    print(f"Name: {attrs.get('name')!r} -> {APP_NAME!r}; subtitle: {attrs.get('subtitle')!r} -> {SUBTITLE!r}")
+    if apply:
+        body = {
+            "data": {
+                "type": "appInfoLocalizations",
+                "id": loc["id"],
+                "attributes": {"name": APP_NAME, "subtitle": SUBTITLE},
+            }
+        }
+        request_json(headers, "PATCH", f"/v1/appInfoLocalizations/{loc['id']}", json=body)
+
+
 def patch_review_notes(headers, version_id, apply):
     data = request_json(
         headers,
@@ -260,6 +315,8 @@ def find_build(headers, app_id):
         f"Using Build {attrs.get('version')} id={build['id']} "
         f"state={attrs.get('processingState')} uploaded={attrs.get('uploadedDate')} expired={attrs.get('expired')}"
     )
+    if attrs.get("processingState") != "VALID" or attrs.get("expired"):
+        raise RuntimeError(f"Build {BUILD_NUMBER} is not ready (state={attrs.get('processingState')})")
     return build["id"]
 
 
@@ -277,8 +334,8 @@ def attach_build(headers, version_id, build_id, apply):
 
 def screenshot_paths():
     paths = sorted(SCREENSHOT_DIR.glob("0*.png"))
-    if len(paths) != 5:
-        raise RuntimeError(f"Expected 5 screenshots in {SCREENSHOT_DIR}, found {len(paths)}")
+    if not 3 <= len(paths) <= 10:
+        raise RuntimeError(f"Expected 3-10 screenshots in {SCREENSHOT_DIR}, found {len(paths)}")
     return paths
 
 
@@ -492,6 +549,7 @@ def main():
     parser.add_argument("--submit", action="store_true", help="Submit the prepared version for App Store review")
     args = parser.parse_args()
 
+    check_limits()
     issuer_id = os.environ.get("ASC_ISSUER_ID")
     if not issuer_id:
         raise SystemExit("Set ASC_ISSUER_ID in the environment")
@@ -512,6 +570,7 @@ def main():
         print("Dry run complete before localization creation")
         return
     patch_localization(headers, loc_id, args.apply)
+    patch_app_info(headers, app_id, args.apply)
     patch_review_notes(headers, version_id, args.apply)
     build_id = find_build(headers, app_id)
     attach_build(headers, version_id, build_id, args.apply)
