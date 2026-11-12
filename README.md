@@ -174,6 +174,7 @@ StarshipLander/
 │   ├── generate_screenshots.py      # Screenshot generator
 │   ├── generate_store_screenshots.py # App Store screenshot set from CI captures (v2.3.0)
 │   ├── update_app_store_v230.py     # App Store Connect listing + submission (v2.3.0)
+│   ├── release_app_store_version.py # Publish an approved version (or report its review state)
 │   ├── caption_screenshots.py       # App Store screenshot captioning
 │   ├── calculate_perfect_scores.py  # Perfect landing score analysis
 │   ├── setup_game_center.py        # ASC API: create GC leaderboards + achievements + upload images

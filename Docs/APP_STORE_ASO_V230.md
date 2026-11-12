@@ -56,3 +56,13 @@ The listing can raise visibility and conversion. Sharing has to come from inside
 - Put the ship skin and pilot rank on the share card.
 - A "beat my score" link that opens the same Daily Challenge.
 - Ask for an App Store rating after the third successful landing in a session (`SKStoreReviewController`). Ratings are the biggest missing conversion signal: the app has 2.
+
+## Releasing after approval
+
+2.3.0 was submitted with manual release. To publish as soon as Apple approves, run this on a schedule from the Mac that holds the release key:
+
+```bash
+ASC_ISSUER_ID=<issuer-id> python3 Scripts/release_app_store_version.py --release
+```
+
+It publishes only when the version is approved and held (Pending Developer Release). Exit code 3 means not approved yet; 1 means a state that needs a person, such as a rejection.
